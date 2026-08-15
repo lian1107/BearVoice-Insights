@@ -17,7 +17,9 @@
 ## 待办
 
 - [x] **配远程仓库**：`https://github.com/lian1107/BearVoice-Insights.git`（**公开仓**，2026-08-15 人明确决定），分支 `main`
-- [ ] **首次推送**：等 `gh auth login` 完成认证后 `git push -u origin main`
+- [x] **首次推送已完成**（2026-08-15）。`gh` 认证为 `lian1107`；`gh auth setup-git` 配好凭证助手后推送成功。
+      远端核对过：27 个文件全是骨架文档与配置，`vault/raw/` 只有 README，
+      `.claude/progress.md` 与 `.claude/skills/` 均已排除 ✓
 - [ ] ⚠️ **公开仓的连带后果，别忘了**：
       ① `vault/raw/` 数据件已改为不入库（含第三方个人信息，见 `.gitignore` 注释）——
       **所以它没有远端副本，必须另配云盘/NAS 备份**，仓里按铁律 8 只留路径 · 哈希 · 一句说明；
