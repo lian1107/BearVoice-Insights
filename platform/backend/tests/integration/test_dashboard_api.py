@@ -25,6 +25,7 @@ async def test_kettle_dashboard_reconciles_with_verified_legacy_report(
     assert len(payload["top_clusters"]) == 10
     assert sum(item["count"] for item in payload["top_clusters"]) == 370
     assert len(payload["opportunities"]) == 9
+    assert all(item["impact_scope"] for item in payload["opportunities"])
     assert payload["coverage"] == {
         "channel": "天猫",
         "period_start": "2026-08-01",

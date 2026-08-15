@@ -1,8 +1,16 @@
+import { EnterpriseRouter, type UiPermission } from "./router";
+
+
+const DEMO_PERMISSIONS: UiPermission[] = [
+  "read_voice",
+  "manage_sources",
+  "review_taxonomy",
+  "review_opportunity",
+  "manage_evaluation",
+  "admin",
+];
+
+
 export function App() {
-  return (
-    <main>
-      <h1>产品机会决策平台</h1>
-      <p role="status">模型外发默认关闭</p>
-    </main>
-  );
+  return <EnterpriseRouter permissions={DEMO_PERMISSIONS} />;
 }

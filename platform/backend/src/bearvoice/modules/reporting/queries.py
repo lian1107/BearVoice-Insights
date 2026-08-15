@@ -44,6 +44,7 @@ class OpportunitySummary(BaseModel):
     safety_level: str | None
     priority_override: str | None
     severity: str | None
+    impact_scope: str | None
     evidence_count: int
 
 
@@ -227,6 +228,7 @@ async def get_dashboard_snapshot(
             safety_level=opportunity.safety_level,
             priority_override=opportunity.priority_override,
             severity=opportunity.severity,
+            impact_scope=opportunity.impact_scope,
             evidence_count=int(evidence_count),
         )
         for opportunity, evidence_count in opportunity_rows

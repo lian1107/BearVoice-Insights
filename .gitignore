@@ -53,3 +53,5 @@ node_modules/
 .pytest_cache/
 platform/.data/
 platform/frontend/dist/
+platform/frontend/playwright-report/
+platform/frontend/test-results/
