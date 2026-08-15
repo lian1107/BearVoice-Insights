@@ -13,7 +13,7 @@ services:
       timeout: 3s
       retries: 20
     ports:
-      - "55432:5432"
+      - "127.0.0.1:55432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
 
@@ -40,7 +40,7 @@ services:
       TEMPORAL_ADDRESS: temporal:7233
       TEMPORAL_CLI_ADDRESS: temporal:7233
     ports:
-      - "7233:7233"
+      - "127.0.0.1:7233:7233"
 
   temporal-ui:
     image: temporalio/ui:2.53.3
@@ -50,7 +50,7 @@ services:
       TEMPORAL_ADDRESS: temporal:7233
       TEMPORAL_CORS_ORIGINS: http://localhost:4173
     ports:
-      - "8233:8080"
+      - "127.0.0.1:8233:8080"
 
   api:
     build:
@@ -67,13 +67,16 @@ services:
       BEARVOICE_TEMPORAL_ADDRESS: ${BEARVOICE_TEMPORAL_ADDRESS}
       BEARVOICE_CACHE_URL: ${BEARVOICE_CACHE_URL}
       BEARVOICE_MODEL_EGRESS_ENABLED: ${BEARVOICE_MODEL_EGRESS_ENABLED}
+      BEARVOICE_RUNTIME_ENVIRONMENT: ${BEARVOICE_RUNTIME_ENVIRONMENT:-production}
+      BEARVOICE_LOCAL_DEV_SESSION_ENABLED: ${BEARVOICE_LOCAL_DEV_SESSION_ENABLED:-false}
+      BEARVOICE_LOCAL_DEV_SESSION_TTL_SECONDS: ${BEARVOICE_LOCAL_DEV_SESSION_TTL_SECONDS:-3600}
       BEARVOICE_STORAGE_BACKEND: ${BEARVOICE_STORAGE_BACKEND}
       BEARVOICE_OBJECT_STORE_ROOT: ${BEARVOICE_OBJECT_STORE_ROOT}
       BEARVOICE_S3_ENDPOINT_URL: ${BEARVOICE_S3_ENDPOINT_URL:-}
       BEARVOICE_S3_ENDPOINT_ALLOWLIST: ${BEARVOICE_S3_ENDPOINT_ALLOWLIST:-[]}
       BEARVOICE_S3_BUCKET: ${BEARVOICE_S3_BUCKET:-}
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     volumes:
       - ./.data/objects:/var/lib/bearvoice/objects
 
@@ -109,7 +112,7 @@ services:
     depends_on:
       - api
     ports:
-      - "4173:8080"
+      - "127.0.0.1:4173:8080"
 
 volumes:
   postgres-data:

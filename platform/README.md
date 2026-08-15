@@ -13,6 +13,7 @@
 - 开发数据卷与本地对象存储位于 `platform/.data/`，不进入 Git。
 - `.env` 不入库；从 `.env.example` 创建本地配置后再替换本地密码。
 - 开发缓存使用 Valkey 的 Redis 兼容协议，避免引入 AGPL 服务依赖。
+- 本地开发服务仅绑定 `127.0.0.1`；短期登录会话使用 HttpOnly、SameSite Cookie，API 重启后自动失效。
 
 ## 首次启动
 
@@ -35,7 +36,7 @@ docker-compose --env-file .env ps
 
 `migrate` 是一次性服务；迁移成功后 API 和 worker 才启动。首次导入的命令输出必须为 10 次缓存命中、0 次模型调用、370/254/10/9。Web 默认位于 `http://localhost:4173`，Temporal UI 位于 `http://localhost:8233`。
 
-正式 OIDC 未接通前，本地身份模式必须在未入库的 `.env` 中设置独立的 32 字符以上签名密钥；不得把测试令牌或密钥写入 README、浏览器源码或 Git。前端只从当前浏览器会话的 `bearvoice_access_token` 读取短期令牌。
+打开 Web 后点击“进入本地开发环境”。该入口只在 `runtime_environment=development`、显式启用本地会话且请求来自 localhost 时开放；不把签名密钥或令牌写入前端，生产默认关闭。正式部署必须关闭 `BEARVOICE_LOCAL_DEV_SESSION_ENABLED` 并接入 OIDC。保留的 Bearer 开发令牌模式仅供后端自动测试，不是浏览器默认入口。
 
 ## 日常运行与报告兼容
 
@@ -96,4 +97,9 @@ bun run test:e2e
 
 cd ..
 docker-compose --env-file .env.example config --quiet
+
+# 启动真实 Compose、幂等导入历史基线，并用浏览器走完整登录和数据链路
+bash scripts/test-compose-browser.sh
 ```
+
+最后一条测试不拦截或伪造 API：它验证浏览器经 Nginx 同源代理建立本地会话，再从真实 PostgreSQL 读取 370/254/10/9。普通 `bun run test:e2e` 继续负责快速组件与多视口回归，两类测试必须都通过。

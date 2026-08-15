@@ -20,11 +20,14 @@ class Settings(BaseSettings):
     model_egress_enabled: bool = False
     model_provider_allowlist: tuple[str, ...] = ()
     model_purpose_allowlist: tuple[str, ...] = ()
+    runtime_environment: Literal["development", "test", "production"] = "production"
     oidc_issuer: str | None = None
     oidc_audience: str | None = None
     oidc_jwks_url: str | None = None
     dev_auth_enabled: bool = False
     dev_auth_signing_key: str | None = None
+    local_dev_session_enabled: bool = False
+    local_dev_session_ttl_seconds: int = 3600
     data_retention_days: int = 365
     storage_backend: Literal["filesystem", "s3"] = "filesystem"
     object_store_root: str = "../.data/objects"

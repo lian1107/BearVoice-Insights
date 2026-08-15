@@ -7,7 +7,8 @@
     "build": "tsc --noEmit && vite build",
     "dev": "vite --host 0.0.0.0",
     "test": "bun test tests",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:e2e:compose": "playwright test --config=playwright.compose.config.ts"
   },
   "dependencies": {
     "react": "^19.2.8",

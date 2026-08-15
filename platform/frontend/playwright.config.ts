@@ -3,6 +3,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./e2e",
+  testIgnore: "real-compose.spec.ts",
   fullyParallel: true,
   reporter: "line",
   use: {

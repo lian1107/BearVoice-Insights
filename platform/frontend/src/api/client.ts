@@ -1,4 +1,6 @@
 import type {
+  AuthOptions,
+  AuthSession,
   GoldenReviewCommand,
   GoldenReviewItem,
   DashboardSnapshot,
@@ -18,6 +20,14 @@ import type {
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 
 
+export class AuthenticationRequiredError extends Error {
+  constructor() {
+    super("需要登录后才能读取企业数据");
+    this.name = "AuthenticationRequiredError";
+  }
+}
+
+
 function authorizationHeaders(): HeadersInit {
   const token = window.sessionStorage.getItem("bearvoice_access_token");
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -27,13 +37,16 @@ function authorizationHeaders(): HeadersInit {
 async function getJson<T>(path: string): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     headers: authorizationHeaders(),
+    credentials: "same-origin",
   });
   if (!response.ok) {
-    throw new Error(
-      response.status === 401
-        ? "登录已失效，请重新进入系统"
-        : `请求失败（${response.status}）`,
-    );
+    if (response.status === 401) {
+      throw new AuthenticationRequiredError();
+    }
+    throw new Error(`请求失败（${response.status}）`);
+  }
+  if (!response.headers.get("content-type")?.includes("application/json")) {
+    throw new Error("服务路由异常：接口没有返回 JSON 数据");
   }
   return response.json() as Promise<T>;
 }
@@ -47,12 +60,34 @@ async function sendJson<T>(path: string, body: unknown): Promise<T> {
       ...authorizationHeaders(),
     },
     body: JSON.stringify(body),
+    credentials: "same-origin",
   });
   if (!response.ok) {
+    if (response.status === 401) {
+      throw new AuthenticationRequiredError();
+    }
     const detail = await response.json().catch(() => null) as { detail?: string } | null;
     throw new Error(detail?.detail ?? `提交失败（${response.status}）`);
   }
+  if (!response.headers.get("content-type")?.includes("application/json")) {
+    throw new Error("服务路由异常：接口没有返回 JSON 数据");
+  }
   return response.json() as Promise<T>;
+}
+
+
+export function getAuthOptions(): Promise<AuthOptions> {
+  return getJson<AuthOptions>("/api/auth/options");
+}
+
+
+export function getAuthSession(): Promise<AuthSession> {
+  return getJson<AuthSession>("/api/auth/session");
+}
+
+
+export function startLocalDevSession(): Promise<{ mode: string; expires_at: string }> {
+  return sendJson<{ mode: string; expires_at: string }>("/api/auth/dev-session", {});
 }
 
 

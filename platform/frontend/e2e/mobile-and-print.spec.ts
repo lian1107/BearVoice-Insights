@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+import { mockAuthenticatedAdmin } from "./mock-auth";
+
 
 const dashboard = {
   product: "养生壶",
@@ -21,6 +23,7 @@ const dashboard = {
 
 
 test("long labels, mobile width and print view preserve decision context", async ({ page }, testInfo) => {
+  await mockAuthenticatedAdmin(page);
   await page.route("**/api/dashboard?**", (route) => route.fulfill({ json: dashboard }));
   await page.goto("/");
 

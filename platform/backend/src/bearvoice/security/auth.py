@@ -9,6 +9,7 @@ from jwt import PyJWKClient, PyJWTError
 
 from bearvoice.config import Settings
 from bearvoice.domain.enums import Permission
+from bearvoice.security.local_session import LOCAL_DEV_SESSION_COOKIE, LocalDevSessionStore
 
 
 ROLE_PERMISSIONS: Mapping[str, frozenset[Permission]] = {
@@ -140,10 +141,24 @@ def get_principal(
     request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
 ) -> Principal:
-    if credentials is None or credentials.scheme.lower() != "bearer":
-        raise _authentication_error()
     settings = getattr(request.app.state, "settings", None) or Settings()
-    return Principal.from_claims(_decode_token(credentials.credentials, settings))
+    if credentials is not None and credentials.scheme.lower() == "bearer":
+        return Principal.from_claims(_decode_token(credentials.credentials, settings))
+    if (
+        settings.runtime_environment == "development"
+        and settings.local_dev_session_enabled
+    ):
+        token = request.cookies.get(LOCAL_DEV_SESSION_COOKIE)
+        sessions: LocalDevSessionStore | None = getattr(
+            request.app.state,
+            "local_dev_sessions",
+            None,
+        )
+        if token and sessions is not None:
+            claims = sessions.resolve(token)
+            if claims is not None:
+                return Principal.from_claims(claims)
+    raise _authentication_error()
 
 
 def assert_permission(principal: Principal, permission: Permission) -> None:

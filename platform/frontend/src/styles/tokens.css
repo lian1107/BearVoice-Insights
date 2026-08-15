@@ -23,6 +23,14 @@ body { margin: 0; min-width: 320px; min-height: 100vh; }
 button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
 
+.auth-shell { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: radial-gradient(circle at top, #eef3ff, #f5f7fb 48%); }
+.auth-card { width: min(460px, 100%); padding: 34px; border: 1px solid var(--line); border-radius: 18px; background: white; box-shadow: var(--shadow); }
+.auth-card .brand__mark { margin-bottom: 24px; }
+.auth-card h1 { margin: 6px 0 12px; color: var(--ink); font-size: 30px; letter-spacing: -.03em; }
+.auth-card > p:not(.eyebrow, .form-error, .auth-note) { color: var(--muted); line-height: 1.7; }
+.auth-card .button { width: 100%; margin-top: 16px; }
+.auth-note { color: var(--muted); padding: 12px; border-radius: 8px; background: var(--surface-soft); }
+
 .app-shell { min-height: 100vh; display: grid; grid-template-columns: 232px minmax(0, 1fr); }
 .sidebar { background: var(--navy); color: #d8e0ef; padding: 24px 16px; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; }
 .brand { display: flex; align-items: center; gap: 12px; padding: 0 8px 24px; border-bottom: 1px solid rgba(255,255,255,.1); }

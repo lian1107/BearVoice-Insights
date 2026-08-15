@@ -21,6 +21,10 @@ async def admin_status(
             and settings.oidc_jwks_url
         ),
         "dev_auth_enabled": settings.dev_auth_enabled,
+        "local_dev_session_enabled": (
+            settings.runtime_environment == "development"
+            and settings.local_dev_session_enabled
+        ),
         "model_egress_enabled": settings.model_egress_enabled,
         "approved_model_providers": list(settings.model_provider_allowlist),
         "approved_model_purposes": list(settings.model_purpose_allowlist),

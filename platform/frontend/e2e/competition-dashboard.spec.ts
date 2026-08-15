@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+import { mockAuthenticatedAdmin } from "./mock-auth";
+
 
 const dashboard = {
   product: "养生壶",
@@ -58,6 +60,7 @@ const dashboard = {
 
 
 test.beforeEach(async ({ page }) => {
+  await mockAuthenticatedAdmin(page);
   await page.route("**/api/dashboard?**", async (route) => {
     await route.fulfill({ json: dashboard });
   });

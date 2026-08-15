@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+import { mockAuthenticatedAdmin } from "./mock-auth";
+
 
 const dashboard = {
   product: "养生壶",
@@ -53,6 +55,7 @@ const evidence = {
 
 
 test("review decision appears in the audit timeline with its actor", async ({ page }) => {
+  await mockAuthenticatedAdmin(page);
   await page.route("**/api/dashboard?**", (route) => route.fulfill({ json: dashboard }));
   await page.route("**/api/opportunities/glass-crack", (route) => route.fulfill({ json: opportunity }));
   await page.route("**/api/evidence/evidence-1**", (route) => route.fulfill({ json: evidence }));

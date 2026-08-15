@@ -1,5 +1,17 @@
 export type DashboardView = "competition" | "enterprise";
 
+export interface AuthOptions {
+  local_dev_session: boolean;
+  oidc_configured: boolean;
+}
+
+export interface AuthSession {
+  subject: string;
+  roles: string[];
+  permissions: string[];
+  product_lines: string[];
+}
+
 export interface SignalMetric {
   signal_type: string;
   count: number;
@@ -63,6 +75,7 @@ export interface SourceSummary {
 export interface SystemStatus {
   oidc_configured: boolean;
   dev_auth_enabled: boolean;
+  local_dev_session_enabled: boolean;
   model_egress_enabled: boolean;
   approved_model_providers: string[];
   approved_model_purposes: string[];
