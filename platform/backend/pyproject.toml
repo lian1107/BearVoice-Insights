@@ -10,6 +10,7 @@ dependencies = [
   "pgvector>=0.5.0",
   "pydantic-settings",
   "sqlalchemy[asyncio]>=2.0.52",
+  "temporalio>=1.31.0",
   "uvicorn[standard]",
 ]
 
