@@ -47,6 +47,7 @@ class ReviewDecisionType(StrEnum):
 
 class Permission(StrEnum):
     READ_VOICE = "read_voice"
+    READ_ALL_PRODUCT_LINES = "read_all_product_lines"
     MANAGE_SOURCES = "manage_sources"
     RUN_ANALYSIS = "run_analysis"
     REVIEW_TAXONOMY = "review_taxonomy"

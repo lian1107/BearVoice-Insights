@@ -6,6 +6,7 @@ from bearvoice.config import Settings
 def create_app(settings: Settings | None = None) -> FastAPI:
     active = settings or Settings()
     app = FastAPI(title="BearVoice", version="0.1.0")
+    app.state.settings = active
 
     @app.get("/api/health")
     def health() -> dict[str, str]:
