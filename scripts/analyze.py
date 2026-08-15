@@ -43,6 +43,9 @@ REPORTS = os.path.join(REPO, "reports")
 
 BATCH = 40           # 每批喂给 LLM 的原声条数
 SIGNALS = ["缺陷", "认知", "预期", "咨询"]
+ADDRESS_MARKER_RE = re.compile(
+    r"(?:省|自治区|市|县|区|镇|乡|街道|街|路|巷|村|小区|市场|门口)"
+)
 
 
 # ── 数据 ────────────────────────────────────────────────────────────────
@@ -50,13 +53,15 @@ def load_rows(verbose=True):
     """读数据并**按原声id 去重**。
 
     ⚠️ 源数据 1500 行里只有 1109 个唯一 原声id——282 个 id 各自重复出现，
-    且重复行内容一字不差（2026-08-15 实测）。不去重，所有反馈类型的占比会虚高 35%，
-    报告里每一个百分比都是错的。这是这批数据最容易踩、也最致命的一个坑。
+    且重复行内容一字不差（2026-08-15 实测）。不去重会让总量虚增 35.3%，
+    也可能扭曲各反馈类型占比。这是这批数据最容易踩、也最致命的一个坑。
     """
     if not os.path.exists(DATA):
         sys.exit("找不到数据：%s" % DATA)
-    text = open(DATA, "rb").read().decode("utf-8-sig")
+    with open(DATA, "rb") as f:
+        text = f.read().decode("utf-8-sig")
     raw = [r for r in csv.DictReader(io.StringIO(text)) if (r.get("原声内容") or "").strip()]
+    key_counts = Counter(r.get("原声id") or r.get("原声内容") for r in raw)
 
     seen, rows = set(), []
     for r in raw:
@@ -70,8 +75,11 @@ def load_rows(verbose=True):
 
     dropped = len(raw) - len(rows)
     if verbose and dropped:
-        print("ℹ 去重：%d 行 → %d 条（丢弃 %d 条完全重复，若不去重占比会虚高 %.0f%%）"
-              % (len(raw), len(rows), dropped, dropped * 100.0 / len(rows)))
+        duplicated_ids = sum(1 for n in key_counts.values() if n > 1)
+        print("ℹ 去重：%d 行 → %d 条（%d 条多余重复行，涉及 %d 个重复 ID；"
+              "去重前总量虚增 %.1f%%，各类占比可能偏移）" % (
+                  len(raw), len(rows), dropped, duplicated_ids,
+                  dropped * 100.0 / len(rows)))
     return rows
 
 
@@ -88,6 +96,34 @@ def product_key(title):
         if any(k in title for k in kws):
             return name
     return "其他"
+
+
+def source_duplicate_stats():
+    """Return raw rows, unique IDs, extra duplicate rows, and duplicated IDs."""
+    with open(DATA, "rb") as f:
+        text = f.read().decode("utf-8-sig")
+    raw = [r for r in csv.DictReader(io.StringIO(text))
+           if (r.get("原声内容") or "").strip()]
+    counts = Counter(r.get("原声id") or r.get("原声内容") for r in raw)
+    return {
+        "raw_rows": len(raw),
+        "unique_ids": len(counts),
+        "extra_rows": sum(n - 1 for n in counts.values()),
+        "duplicated_ids": sum(1 for n in counts.values() if n > 1),
+    }
+
+
+def sanitize_report_quote(text):
+    """Mask address-like dialogue segments before quoting customer text."""
+    parts = [part.strip() for part in re.split(r"\s*/\s*", text)
+             if part.strip()]
+    safe = []
+    for part in parts:
+        if len(ADDRESS_MARKER_RE.findall(part)) >= 2:
+            safe.append("[地址已脱敏]")
+        else:
+            safe.append(part)
+    return " / ".join(safe)
 
 
 # ── LLM ─────────────────────────────────────────────────────────────────
@@ -265,6 +301,9 @@ def write_report(product, rows, records, clusters, recs):
     total = len(records)
     sig_count = Counter(r["signal"] for r in records)
     actionable = total - sig_count.get("咨询", 0)
+    duplicate_stats = source_duplicate_stats()
+    duplicate_inflation = (duplicate_stats["extra_rows"] * 100.0 /
+                           duplicate_stats["unique_ids"])
 
     L = []
     A = L.append
@@ -273,7 +312,10 @@ def write_report(product, rows, records, clusters, recs):
     A("> 数据：`vault/raw/20260815-赛题资料/天猫咨询原声-1500条.csv`（天猫客服咨询，2026-08-01 ~ 08-03）")
     A("> 本品类 **%d 条**（已按 `原声id` 去重），其中含产品改进信号 **%d 条（%.0f%%）**。"
       % (total, actionable, actionable * 100.0 / total))
-    A("> ⚠️ **源数据 1500 行中有 282 条完全重复**，直接统计会让所有占比虚高约 35%。本报告的数字是去重后的。")
+    A("> ⚠️ **源数据 %d 行中有 %d 条多余重复行，涉及 %d 个重复 ID**；"
+      "去重前总量虚增 %.1f%%，各类占比也可能偏移。本报告的数字是去重后的。" % (
+          duplicate_stats["raw_rows"], duplicate_stats["extra_rows"],
+          duplicate_stats["duplicated_ids"], duplicate_inflation))
     A("> 由 `scripts/analyze.py` 生成，可重跑复现。")
     A("")
     A("## 一、信号构成")
@@ -319,8 +361,8 @@ def write_report(product, rows, records, clusters, recs):
         A("**%s**（%d 条，%.1f%%）" % (c["name"], c["count"], c["pct"]))
         A("")
         for i in c["members"][:3]:
-            A("> %s" % records[i]["原声"][:180])
-            A("> ")
+            A("> %s" % sanitize_report_quote(records[i]["原声"])[:180])
+            A(">")
             A("> — `%s` ｜ %s ｜ %s" % (records[i]["原声id"][:16], records[i]["情感"], records[i]["日期"]))
             A("")
     A("---")
