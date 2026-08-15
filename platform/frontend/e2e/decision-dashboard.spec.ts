@@ -69,7 +69,7 @@ test.beforeEach(async ({ page }) => {
 test("decision dashboard keeps evidence and data boundaries visible", async ({ page }, testInfo) => {
   await page.goto("/");
 
-  await expect(page.getByRole("heading", { name: "产品决策驾驶舱" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "证据优先驾驶舱" })).toBeVisible();
   await expect(page.getByText("赛事视图")).toHaveCount(0);
   await expect(page.getByText("企业视图")).toHaveCount(0);
   await expect(page.getByText("254 条含改进信号")).toBeVisible();

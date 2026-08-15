@@ -1,8 +1,11 @@
+import type { ReactNode } from "react";
+
 interface KpiItem {
   label: string;
   value: string | number;
   context: string;
-  tone?: "default" | "attention";
+  icon?: ReactNode;
+  tone?: "default" | "attention" | "positive";
 }
 
 
@@ -11,10 +14,10 @@ export function KpiStrip({ items }: { items: KpiItem[] }) {
     <section className="kpi-strip" aria-label="关键指标">
       {items.map((item) => (
         <article
-          className={`kpi-card ${item.tone === "attention" ? "kpi-card--attention" : ""}`}
+          className={`kpi-card kpi-card--${item.tone ?? "default"}`}
           key={item.label}
         >
-          <p className="kpi-card__label">{item.label}</p>
+          <div className="kpi-card__top"><p className="kpi-card__label">{item.label}</p>{item.icon ? <span className="kpi-card__icon">{item.icon}</span> : null}</div>
           <strong className="kpi-card__value">{item.value}</strong>
           <p className="kpi-card__context">{item.context}</p>
         </article>

@@ -11,8 +11,11 @@
     "test:e2e:compose": "playwright test --config=playwright.compose.config.ts"
   },
   "dependencies": {
+    "lucide-react": "^1.31.0",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "react-is": "19.2.0",
+    "recharts": "^3.10.1"
   },
   "devDependencies": {
     "@happy-dom/global-registrator": "^20.11.2",

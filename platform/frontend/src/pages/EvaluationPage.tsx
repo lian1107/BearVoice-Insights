@@ -19,7 +19,7 @@ export function EvaluationPage({
   }, [loadQueue]);
   return (
     <div>
-      <header className="page-heading"><div><p className="eyebrow">质量中心</p><h1>黄金样本人工定标</h1><p>两人独立审核；分歧进入仲裁，模型建议不等于真相。</p></div></header>
+      <header className="page-heading"><div><p className="eyebrow">人工定标 · 双人复核</p><h1>质量评测</h1><p>两人独立审核；分歧进入仲裁，模型建议不等于真相。</p></div></header>
       {error ? <div className="state-panel" role="alert">{error}</div> : items ? <GoldenReviewQueue initialItems={items} submitReview={submitReview} /> : <div className="state-panel" role="status">正在读取定标队列…</div>}
     </div>
   );

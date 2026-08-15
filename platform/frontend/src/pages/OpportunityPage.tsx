@@ -87,11 +87,16 @@ export function OpportunityPage({
     } : current);
   }
 
+  function pickerLabel(item: OpportunitySummary) {
+    const compactTitle = item.title.length > 34 ? `${item.title.slice(0, 34)}…` : item.title;
+    return `${item.severity ?? "待定"} · ${compactTitle}`;
+  }
+
   return (
     <div className="opportunity-page">
-      <header className="page-heading"><div><p className="eyebrow">机会中心</p><h1>证据与人工审核</h1><p>先核对原声，再记录理由和决定。</p></div></header>
+      <header className="page-heading"><div><p className="eyebrow">证据链 · 人工决策</p><h1>产品机会审核</h1><p>先核对原声，再记录理由和决定。</p></div></header>
       {items.length ? (
-        <label className="field opportunity-picker"><span>选择机会</span><select value={selectedId} onChange={(event) => setSelectedId(event.target.value)}>{items.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select></label>
+        <label className="field opportunity-picker"><span>选择待审核机会</span><select value={selectedId} onChange={(event) => setSelectedId(event.target.value)}>{items.map((item) => <option key={item.id} value={item.id}>{pickerLabel(item)}</option>)}</select></label>
       ) : null}
       {error ? <div className="state-panel" role="alert">{error}</div> : detail ? (
         <>

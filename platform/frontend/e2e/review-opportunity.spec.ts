@@ -76,7 +76,7 @@ test("review decision appears in the audit timeline with its actor", async ({ pa
 
   await page.goto("/");
   await page.getByRole("button", { name: "查看决策依据" }).click();
-  await expect(page.getByRole("heading", { name: "证据与人工审核" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "产品机会审核" })).toBeVisible();
   await page.getByRole("button", { name: "查看 13 条证据" }).click();
   await expect(page.getByText("亲，我买的玻璃壶炸了一个")).toBeVisible();
   await expect(page.getByText("来源：天猫咨询")).toBeVisible();

@@ -19,7 +19,7 @@ export function SourcesPage() {
   return (
     <div>
       <header className="page-heading">
-        <div><p className="eyebrow">数据治理</p><h1>原声数据</h1><p>按批次核对原始数、去重数与隔离数。</p></div>
+        <div><p className="eyebrow">真实原声 · 可追溯</p><h1>数据资产</h1><p>核对每个来源批次的原始数、去重数与隔离数。</p></div>
       </header>
       {error ? <div role="alert" className="state-panel">{error}</div> : loading ? (
         <div role="status" className="state-panel">正在核对来源批次…</div>

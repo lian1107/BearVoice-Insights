@@ -14,7 +14,7 @@ export function SystemPage() {
   }, []);
   return (
     <div>
-      <header className="page-heading"><div><p className="eyebrow">安全与治理</p><h1>系统管理</h1><p>只读展示安全开关，不显示凭据、密钥或提示词。</p></div></header>
+      <header className="page-heading"><div><p className="eyebrow">安全边界 · 只读</p><h1>系统状态</h1><p>只读展示安全开关，不显示凭据、密钥或提示词。</p></div></header>
       {error ? <div role="alert" className="state-panel">{error}</div> : status ? (
         <dl className="system-grid panel">
           <div><dt>OIDC 身份</dt><dd>{status.oidc_configured ? "已配置" : "待配置"}</dd></div>

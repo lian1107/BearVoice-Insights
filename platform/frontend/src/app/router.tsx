@@ -1,4 +1,15 @@
 import { useState } from "react";
+import {
+  BadgeCheck,
+  Database,
+  LayoutDashboard,
+  Lightbulb,
+  Menu,
+  ShieldCheck,
+  Tags,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 
 import { DashboardPage } from "../pages/DashboardPage";
 import { EvaluationPage } from "../pages/EvaluationPage";
@@ -21,15 +32,16 @@ type RouteKey = "dashboard" | "sources" | "taxonomy" | "opportunities" | "evalua
 const routes: Array<{
   key: RouteKey;
   label: string;
-  section: string;
+  group: "决策" | "数据" | "治理";
   permission: UiPermission;
+  icon: LucideIcon;
 }> = [
-  { key: "dashboard", label: "驾驶舱", section: "决策", permission: "read_voice" },
-  { key: "sources", label: "原声数据", section: "资产", permission: "manage_sources" },
-  { key: "taxonomy", label: "聚类治理", section: "治理", permission: "review_taxonomy" },
-  { key: "opportunities", label: "机会中心", section: "决策", permission: "review_opportunity" },
-  { key: "evaluation", label: "质量中心", section: "质量", permission: "manage_evaluation" },
-  { key: "system", label: "系统管理", section: "系统", permission: "admin" },
+  { key: "dashboard", label: "决策总览", group: "决策", permission: "read_voice", icon: LayoutDashboard },
+  { key: "opportunities", label: "产品机会", group: "决策", permission: "review_opportunity", icon: Lightbulb },
+  { key: "sources", label: "数据资产", group: "数据", permission: "manage_sources", icon: Database },
+  { key: "taxonomy", label: "主题治理", group: "数据", permission: "review_taxonomy", icon: Tags },
+  { key: "evaluation", label: "质量评测", group: "治理", permission: "manage_evaluation", icon: BadgeCheck },
+  { key: "system", label: "系统状态", group: "治理", permission: "admin", icon: ShieldCheck },
 ];
 
 
@@ -47,6 +59,15 @@ export function EnterpriseRouter({ permissions }: { permissions: UiPermission[] 
   const visibleRoutes = routes.filter((route) => permissions.includes(route.permission));
   const [active, setActive] = useState<RouteKey>(visibleRoutes[0]?.key ?? "dashboard");
   const [selectedOpportunityId, setSelectedOpportunityId] = useState<string>();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const routeGroups = ["决策", "数据", "治理"] as const;
+  const primaryMobileRoutes = visibleRoutes.filter((route) => ["dashboard", "opportunities", "sources", "taxonomy"].includes(route.key));
+  const secondaryMobileRoutes = visibleRoutes.filter((route) => !primaryMobileRoutes.includes(route));
+
+  function navigate(key: RouteKey) {
+    setActive(key);
+    setMobileMenuOpen(false);
+  }
   const content = active === "dashboard"
     ? (
         <DashboardPage
@@ -73,16 +94,46 @@ export function EnterpriseRouter({ permissions }: { permissions: UiPermission[] 
       <aside className="sidebar">
         <div className="brand"><span className="brand__mark" aria-hidden="true">B</span><div><strong>BearVoice</strong><small>产品机会决策平台</small></div></div>
         <nav aria-label="主导航">
-          {visibleRoutes.map((route) => (
-            <button aria-current={active === route.key ? "page" : undefined} key={route.key} onClick={() => setActive(route.key)} type="button"><span>{route.label}</span><small>{route.section}</small></button>
-          ))}
+          {routeGroups.map((group) => {
+            const groupRoutes = visibleRoutes.filter((route) => route.group === group);
+            return groupRoutes.length ? (
+              <div className="nav-group" key={group}>
+                <p>{group}</p>
+                {groupRoutes.map((route) => {
+                  const Icon = route.icon;
+                  return (
+                    <button aria-current={active === route.key ? "page" : undefined} key={route.key} onClick={() => navigate(route.key)} type="button">
+                      <Icon aria-hidden="true" size={18} strokeWidth={1.8} />
+                      <span>{route.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null;
+          })}
         </nav>
         <div className="sidebar__footer"><span className="status-dot" />私有化环境</div>
       </aside>
       <div className="workspace">
-        <header className="topbar"><strong aria-level={1} role="heading">产品机会决策平台</strong><span role="status">模型外发默认关闭</span></header>
+        <header className="topbar"><strong aria-label="产品机会决策平台" aria-level={1} role="heading">{routes.find((route) => route.key === active)?.label}</strong><span role="status"><ShieldCheck aria-hidden="true" size={14} />模型外发默认关闭</span></header>
         <main className="content">{content}</main>
       </div>
+      {mobileMenuOpen ? (
+        <div className="mobile-more-sheet" role="dialog" aria-label="更多导航" aria-modal="true">
+          <div className="mobile-more-sheet__header"><strong>更多工作区</strong><button aria-label="关闭更多导航" onClick={() => setMobileMenuOpen(false)} type="button"><X size={20} /></button></div>
+          {secondaryMobileRoutes.map((route) => {
+            const Icon = route.icon;
+            return <button key={route.key} onClick={() => navigate(route.key)} type="button"><Icon size={19} /><span>{route.label}</span></button>;
+          })}
+        </div>
+      ) : null}
+      <nav className="mobile-nav" aria-label="移动端主导航">
+        {primaryMobileRoutes.map((route) => {
+          const Icon = route.icon;
+          return <button aria-current={active === route.key ? "page" : undefined} key={route.key} onClick={() => navigate(route.key)} type="button"><Icon size={19} /><span>{route.label}</span></button>;
+        })}
+        {secondaryMobileRoutes.length ? <button aria-expanded={mobileMenuOpen} onClick={() => setMobileMenuOpen((open) => !open)} type="button"><Menu size={19} /><span>更多</span></button> : null}
+      </nav>
     </div>
   );
 }

@@ -32,7 +32,7 @@ test("long labels, mobile width and print view preserve decision context", async
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
 
   await page.emulateMedia({ media: "print" });
-  await expect(page.getByLabel("主导航")).toBeHidden();
+  await expect(page.getByLabel("主导航", { exact: true })).toBeHidden();
   await expect(page.getByText(/仅天猫咨询.*不支持趋势判断/)).toBeVisible();
   await testInfo.attach(`print-${testInfo.project.name}`, {
     body: await page.screenshot({ fullPage: true }),

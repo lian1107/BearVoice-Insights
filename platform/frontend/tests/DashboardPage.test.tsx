@@ -69,6 +69,7 @@ test("decision dashboard leads with evidence-backed decision context", async () 
     screen.getByText("仅天猫咨询 · 2026-08-01 至 08-03 · 不支持趋势判断"),
   ).toBeTruthy();
   expect(screen.getByRole("heading", { name: "产品机会" })).toBeTruthy();
+  await screen.findByRole("heading", { name: "信号构成" });
   expect(screen.getAllByRole("progressbar")).toHaveLength(14);
 });
 
@@ -87,7 +88,7 @@ test("cluster and opportunity controls open their governance workspaces", async 
   await screen.findByText("370");
   screen.getByRole("button", { name: "容量与尺寸预期" }).click();
   screen.getByRole("button", { name: "查看决策依据" }).click();
-  screen.getByRole("button", { name: "进入机会中心" }).click();
+  screen.getByRole("button", { name: "进入产品机会" }).click();
 
   expect(openedClusters).toEqual(["cluster-0"]);
   expect(openedOpportunities).toEqual(["opportunity-1", undefined]);

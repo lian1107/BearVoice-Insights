@@ -50,10 +50,10 @@ export function OpportunityList({
           <h2 id="opportunity-title">产品机会</h2>
           <p>安全覆盖优先，再结合审核状态与影响面排序；实施难度待人工评估</p>
         </div>
-        <button className="text-button" onClick={onOpenCenter} type="button">进入机会中心</button>
+        <button className="text-button" onClick={onOpenCenter} type="button">进入产品机会</button>
       </header>
       <div className="opportunity-list">
-        {ordered.map((item) => (
+        {ordered.slice(0, 3).map((item) => (
           <article className="opportunity-card" key={item.id}>
             <div className="opportunity-card__meta">
               <span
@@ -70,7 +70,7 @@ export function OpportunityList({
             <h3>{item.title}</h3>
             <div className="opportunity-card__footer">
               <span>{item.impact_scope ?? `${item.evidence_count} 条独立证据`}</span>
-              <button onClick={() => onSelect?.(item.id)} type="button">查看决策依据</button>
+              <button onClick={() => onSelect?.(item.id)} type="button">打开机会</button>
             </div>
           </article>
         ))}

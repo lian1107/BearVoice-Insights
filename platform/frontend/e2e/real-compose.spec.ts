@@ -17,7 +17,7 @@ test("local login loads canonical kettle data through the real compose stack", a
   await expect(page.getByRole("heading", { name: "本地开发登录" })).toBeVisible();
   await page.getByRole("button", { name: "进入本地开发环境" }).click();
 
-  await expect(page.getByRole("heading", { name: "产品决策驾驶舱" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "证据优先驾驶舱" })).toBeVisible();
   await expect(page.getByText("赛事视图")).toHaveCount(0);
   await expect(page.getByText("企业视图")).toHaveCount(0);
   await expect(page.getByText("370", { exact: true })).toBeVisible();
