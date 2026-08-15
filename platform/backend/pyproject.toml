@@ -4,8 +4,12 @@ version = "0.1.0"
 description = "小熊电器内部客户原声产品机会平台"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+  "alembic>=1.19.1",
+  "asyncpg>=0.31.0",
   "fastapi",
+  "pgvector>=0.5.0",
   "pydantic-settings",
+  "sqlalchemy[asyncio]>=2.0.52",
   "uvicorn[standard]",
 ]
 
