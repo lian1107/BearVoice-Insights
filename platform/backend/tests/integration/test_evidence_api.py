@@ -31,7 +31,9 @@ async def test_evidence_response_contains_sanitized_quote_and_provenance(
     assert "[地址已脱敏]" in body["quote"]
     assert body["voice_record_id"]
     assert body["source"] == "天猫咨询"
+    assert body["occurred_at"]
     assert body["analysis_run_id"]
+    assert body["direction"] == "support"
     assert body["privacy_status"] == "masked"
     assert "raw_object_ref" not in body
     assert "internal_path" not in body

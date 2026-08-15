@@ -22,6 +22,23 @@ class MergeClustersCommand:
     reason: str
 
 
+@dataclass(frozen=True)
+class SplitGroup:
+    name: str
+    signal_ids: tuple[uuid.UUID, ...]
+
+
+@dataclass(frozen=True)
+class ReviseTaxonomyCommand:
+    taxonomy_id: uuid.UUID
+    operation: str
+    cluster_ids: tuple[uuid.UUID, ...]
+    new_name: str
+    actor_id: str
+    reason: str
+    split_groups: tuple[SplitGroup, ...] = ()
+
+
 async def apply_taxonomy_revision(
     session: AsyncSession,
     command: MergeClustersCommand,
@@ -136,6 +153,169 @@ async def apply_taxonomy_revision(
             id=uuid.uuid4(),
             actor_id=command.actor_id,
             action="taxonomy.merge_clusters",
+            subject_type="taxonomy_version",
+            subject_id=revised.id,
+            before_state={"taxonomy_version_id": str(source.id)},
+            after_state={"taxonomy_version_id": str(revised.id)},
+            reason=command.reason,
+        )
+    )
+    await session.flush()
+    return revised
+
+
+async def apply_taxonomy_edit(
+    session: AsyncSession,
+    command: ReviseTaxonomyCommand,
+) -> TaxonomyVersion:
+    if command.operation not in {"rename", "remove", "restore", "split"}:
+        raise ValueError(f"不支持的分类法操作：{command.operation}")
+    if not command.reason.strip() or not command.cluster_ids:
+        raise ValueError("分类法修订必须选择聚类并填写理由")
+
+    source = await session.scalar(
+        select(TaxonomyVersion)
+        .where(TaxonomyVersion.id == command.taxonomy_id)
+        .with_for_update()
+    )
+    if source is None:
+        raise LookupError(f"分类法版本不存在：{command.taxonomy_id}")
+    source_clusters = list(
+        await session.scalars(
+            select(Cluster).where(Cluster.taxonomy_version_id == source.id)
+        )
+    )
+    cluster_by_id = {cluster.id: cluster for cluster in source_clusters}
+    selected_ids = set(command.cluster_ids)
+    if selected_ids - set(cluster_by_id):
+        raise ValueError("待修订聚类不属于源分类法")
+    if command.operation in {"rename", "split"} and len(selected_ids) != 1:
+        raise ValueError("改名或拆分一次只能选择一个聚类")
+    if command.operation == "rename" and not command.new_name.strip():
+        raise ValueError("聚类新名称不能为空")
+
+    source_memberships = list(
+        await session.scalars(
+            select(ClusterMembership).where(
+                ClusterMembership.taxonomy_version_id == source.id
+            )
+        )
+    )
+    revised = TaxonomyVersion(
+        id=uuid.uuid4(),
+        product_scope=source.product_scope,
+        parent_version_id=source.id,
+        origin="human_revision",
+        status="draft",
+    )
+    session.add(revised)
+    await session.flush()
+
+    copied_cluster_ids: dict[uuid.UUID, uuid.UUID] = {}
+    split_signal_targets: dict[uuid.UUID, uuid.UUID] = {}
+    new_clusters: list[Cluster] = []
+    if command.operation == "split":
+        source_cluster = cluster_by_id[next(iter(selected_ids))]
+        source_signal_ids = {
+            membership.signal_id
+            for membership in source_memberships
+            if membership.cluster_id == source_cluster.id
+        }
+        if len(command.split_groups) < 2:
+            raise ValueError("拆分至少需要两个成员分组")
+        group_signal_ids = [
+            signal_id
+            for group in command.split_groups
+            for signal_id in group.signal_ids
+        ]
+        if len(group_signal_ids) != len(set(group_signal_ids)):
+            raise ValueError("拆分成员不能出现在多个分组")
+        if set(group_signal_ids) != source_signal_ids:
+            raise ValueError("拆分分组必须完整覆盖原聚类成员")
+        for group in command.split_groups:
+            if not group.name.strip() or not group.signal_ids:
+                raise ValueError("拆分分组必须包含名称和成员")
+            cluster = Cluster(
+                id=uuid.uuid4(),
+                taxonomy_version_id=revised.id,
+                original_name=group.name.strip(),
+                current_name=group.name.strip(),
+                description=command.reason,
+                primary_signal_type=source_cluster.primary_signal_type,
+                keywords=list(source_cluster.keywords),
+                representative_record_ids=list(source_cluster.representative_record_ids),
+                is_outlier=source_cluster.is_outlier,
+                status="active",
+            )
+            new_clusters.append(cluster)
+            for signal_id in group.signal_ids:
+                split_signal_targets[signal_id] = cluster.id
+
+    for cluster in source_clusters:
+        if command.operation == "split" and cluster.id in selected_ids:
+            continue
+        copied = _copy_cluster(cluster, revised.id)
+        if cluster.id in selected_ids:
+            if command.operation == "rename":
+                copied.current_name = command.new_name.strip()
+            elif command.operation == "remove":
+                copied.status = "removed"
+            elif command.operation == "restore":
+                if cluster.status != "removed":
+                    raise ValueError("只有已移出的聚类可以恢复")
+                copied.status = "active"
+        copied_cluster_ids[cluster.id] = copied.id
+        new_clusters.append(copied)
+    session.add_all(new_clusters)
+    await session.flush()
+
+    new_memberships: list[ClusterMembership] = []
+    for membership in source_memberships:
+        target_cluster_id = (
+            split_signal_targets[membership.signal_id]
+            if command.operation == "split" and membership.cluster_id in selected_ids
+            else (
+                copied_cluster_ids[membership.cluster_id]
+                if membership.cluster_id is not None
+                else None
+            )
+        )
+        new_memberships.append(
+            ClusterMembership(
+                id=uuid.uuid4(),
+                taxonomy_version_id=revised.id,
+                cluster_id=target_cluster_id,
+                signal_id=membership.signal_id,
+                assignment_status=membership.assignment_status,
+            )
+        )
+    session.add_all(new_memberships)
+    session.add(
+        TaxonomyRevision(
+            id=uuid.uuid4(),
+            taxonomy_version_id=revised.id,
+            operation=command.operation,
+            payload={
+                "source_taxonomy_id": str(source.id),
+                "cluster_ids": [str(item) for item in command.cluster_ids],
+                "new_name": command.new_name,
+                "split_groups": [
+                    {
+                        "name": group.name,
+                        "signal_ids": [str(item) for item in group.signal_ids],
+                    }
+                    for group in command.split_groups
+                ],
+            },
+            reason=command.reason,
+            actor_id=command.actor_id,
+        )
+    )
+    session.add(
+        AuditEvent(
+            id=uuid.uuid4(),
+            actor_id=command.actor_id,
+            action=f"taxonomy.{command.operation}",
             subject_type="taxonomy_version",
             subject_id=revised.id,
             before_state={"taxonomy_version_id": str(source.id)},

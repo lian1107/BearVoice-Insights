@@ -1,8 +1,11 @@
 import { useState } from "react";
 
 import { DashboardPage } from "../pages/DashboardPage";
+import { EvaluationPage } from "../pages/EvaluationPage";
+import { OpportunityPage } from "../pages/OpportunityPage";
 import { SourcesPage } from "../pages/SourcesPage";
 import { SystemPage } from "../pages/SystemPage";
+import { TaxonomyPage } from "../pages/TaxonomyPage";
 
 
 export type UiPermission =
@@ -43,16 +46,26 @@ function PlaceholderPage({ title }: { title: string }) {
 export function EnterpriseRouter({ permissions }: { permissions: UiPermission[] }) {
   const visibleRoutes = routes.filter((route) => permissions.includes(route.permission));
   const [active, setActive] = useState<RouteKey>(visibleRoutes[0]?.key ?? "dashboard");
+  const [selectedOpportunityId, setSelectedOpportunityId] = useState<string>();
   const content = active === "dashboard"
     ? (
         <DashboardPage
           initialView="competition"
-          onOpenOpportunities={() => setActive("opportunities")}
+          onOpenOpportunities={(id) => {
+            setSelectedOpportunityId(id);
+            setActive("opportunities");
+          }}
           onOpenTaxonomy={() => setActive("taxonomy")}
         />
       )
     : active === "sources"
       ? <SourcesPage />
+      : active === "taxonomy"
+        ? <TaxonomyPage />
+        : active === "opportunities"
+          ? <OpportunityPage opportunityId={selectedOpportunityId} />
+          : active === "evaluation"
+            ? <EvaluationPage />
       : active === "system"
         ? <SystemPage />
         : <PlaceholderPage title={routes.find((route) => route.key === active)?.label ?? "工作区"} />;

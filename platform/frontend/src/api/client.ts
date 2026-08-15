@@ -1,8 +1,17 @@
 import type {
+  GoldenReviewCommand,
+  GoldenReviewItem,
   DashboardSnapshot,
   DashboardView,
+  EvidenceDetail,
+  OpportunityDetail,
+  OpportunityReviewCommand,
+  OpportunityReviewResult,
+  OpportunitySummary,
   SourceSummary,
   SystemStatus,
+  TaxonomyRevisionCommand,
+  TaxonomySummary,
 } from "./types";
 
 
@@ -30,6 +39,23 @@ async function getJson<T>(path: string): Promise<T> {
 }
 
 
+async function sendJson<T>(path: string, body: unknown): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...authorizationHeaders(),
+    },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    const detail = await response.json().catch(() => null) as { detail?: string } | null;
+    throw new Error(detail?.detail ?? `提交失败（${response.status}）`);
+  }
+  return response.json() as Promise<T>;
+}
+
+
 export function getDashboard(
   product: string,
   view: DashboardView,
@@ -46,4 +72,58 @@ export function getSources(): Promise<SourceSummary[]> {
 
 export function getSystemStatus(): Promise<SystemStatus> {
   return getJson<SystemStatus>("/api/admin/status");
+}
+
+
+export function getOpportunities(product = "养生壶"): Promise<OpportunitySummary[]> {
+  const query = new URLSearchParams({ product });
+  return getJson<OpportunitySummary[]>(`/api/opportunities?${query}`);
+}
+
+
+export function getOpportunity(id: string): Promise<OpportunityDetail> {
+  return getJson<OpportunityDetail>(`/api/opportunities/${id}`);
+}
+
+
+export function getEvidence(id: string, opportunityId?: string): Promise<EvidenceDetail> {
+  const query = opportunityId
+    ? `?${new URLSearchParams({ opportunity_id: opportunityId })}`
+    : "";
+  return getJson<EvidenceDetail>(`/api/evidence/${id}${query}`);
+}
+
+
+export function reviewOpportunity(
+  id: string,
+  command: OpportunityReviewCommand,
+): Promise<OpportunityReviewResult> {
+  return sendJson<OpportunityReviewResult>(`/api/opportunities/${id}/reviews`, command);
+}
+
+
+export function getTaxonomies(product = "养生壶"): Promise<TaxonomySummary[]> {
+  const query = new URLSearchParams({ product });
+  return getJson<TaxonomySummary[]>(`/api/taxonomies?${query}`);
+}
+
+
+export function createTaxonomyRevision(
+  taxonomyId: string,
+  command: TaxonomyRevisionCommand,
+): Promise<TaxonomySummary> {
+  return sendJson<TaxonomySummary>(`/api/taxonomies/${taxonomyId}/revisions`, command);
+}
+
+
+export function getGoldenReviewQueue(): Promise<GoldenReviewItem[]> {
+  return getJson<GoldenReviewItem[]>("/api/evaluations/golden-examples");
+}
+
+
+export function submitGoldenReview(
+  exampleId: string,
+  command: GoldenReviewCommand,
+): Promise<GoldenReviewItem> {
+  return sendJson<GoldenReviewItem>(`/api/evaluations/golden-examples/${exampleId}/reviews`, command);
 }

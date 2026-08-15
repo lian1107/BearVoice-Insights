@@ -311,6 +311,7 @@ async def import_legacy_snapshot(
     opportunity_evidence: list[OpportunityEvidence] = []
     for recommendation in snapshot.recommendations:
         cluster_name = recommendation.get("cluster", "")
+        is_safety_priority = recommendation.get("priority") == "P0"
         opportunity = Opportunity(
             id=uuid.uuid4(),
             opportunity_type="improvement",
@@ -319,9 +320,11 @@ async def import_legacy_snapshot(
             product="养生壶",
             impact_scope=str(recommendation.get("impact", "")),
             severity=recommendation.get("priority"),
+            safety_level="critical" if is_safety_priority else None,
             differentiation=None,
             recommended_action=recommendation.get("action"),
-            status=OpportunityStatus.DRAFT.value,
+            priority_override="safety" if is_safety_priority else None,
+            status=OpportunityStatus.PENDING_REVIEW.value,
         )
         session.add(opportunity)
         cluster_data = cluster_data_by_name.get(cluster_name, {})

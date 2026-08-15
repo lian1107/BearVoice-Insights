@@ -20,10 +20,13 @@
 cd platform/backend
 uv sync --python 3.12
 uv run pytest
+uv run ruff check src tests
 
 cd ../frontend
 bun install
-bun test
+bun run test
+bun run build
+bun run test:e2e
 
 cd ..
 docker-compose --env-file .env.example config --quiet

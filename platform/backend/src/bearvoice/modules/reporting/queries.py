@@ -1,5 +1,5 @@
 import uuid
-from datetime import date
+from datetime import date, datetime
 from typing import Literal
 
 from pydantic import BaseModel
@@ -77,10 +77,12 @@ class EvidenceProjection(BaseModel):
     source: str
     product: str
     channel: str
+    occurred_at: datetime | None
     analysis_run_id: uuid.UUID
     signal_type: str
     object_name: str | None
     privacy_status: str
+    direction: str
 
 
 class ReconciliationError(AssertionError):
@@ -306,19 +308,28 @@ async def get_evidence_projection(
     *,
     evidence_id: uuid.UUID,
     allowed_products: frozenset[str] | None,
+    opportunity_id: uuid.UUID | None = None,
 ) -> EvidenceProjection | None:
     statement = (
-        select(Signal, VoiceRecord, Source)
+        select(Signal, VoiceRecord, Source, OpportunityEvidence.evidence_direction)
         .join(VoiceRecord, VoiceRecord.id == Signal.voice_record_id)
         .join(Source, Source.id == VoiceRecord.source_id)
+        .outerjoin(
+            OpportunityEvidence,
+            OpportunityEvidence.signal_id == Signal.id,
+        )
         .where(Signal.id == evidence_id)
     )
+    if opportunity_id is not None:
+        statement = statement.where(
+            OpportunityEvidence.opportunity_id == opportunity_id
+        )
     if allowed_products is not None:
         statement = statement.where(VoiceRecord.product.in_(allowed_products))
-    row = (await session.execute(statement)).one_or_none()
+    row = (await session.execute(statement.limit(1))).one_or_none()
     if row is None:
         return None
-    signal, voice, source = row
+    signal, voice, source, direction = row
     return EvidenceProjection(
         id=signal.id,
         quote=sanitize_voice_text(voice.normalized_text).text,
@@ -326,8 +337,10 @@ async def get_evidence_projection(
         source=source.channel,
         product=voice.product,
         channel=voice.channel,
+        occurred_at=voice.occurred_at,
         analysis_run_id=signal.analysis_run_id,
         signal_type=signal.signal_type,
         object_name=signal.object_name,
         privacy_status=voice.privacy_status,
+        direction=direction or "support",
     )
