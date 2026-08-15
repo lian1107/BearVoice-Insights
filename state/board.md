@@ -16,8 +16,13 @@
 
 ## 待办
 
-- [ ] **配远程仓库**（欠着的第一件事）。本地 `.git` 已建，但没有 remote；`.gitignore` 忽略的那几个目录**没有任何远端副本，本地一丢就没了**。
-      **人已答应给地址，等地址**。拿到后：`git remote add origin <url>`。⚠️ 客户原声含个人信息，**必须建私有仓**
+- [x] **配远程仓库**：`https://github.com/lian1107/BearVoice-Insights.git`（**公开仓**，2026-08-15 人明确决定），分支 `main`
+- [ ] **首次推送**：等 `gh auth login` 完成认证后 `git push -u origin main`
+- [ ] ⚠️ **公开仓的连带后果，别忘了**：
+      ① `vault/raw/` 数据件已改为不入库（含第三方个人信息，见 `.gitignore` 注释）——
+      **所以它没有远端副本，必须另配云盘/NAS 备份**，仓里按铁律 8 只留路径 · 哈希 · 一句说明；
+      ② 进 `vault/truth/` 和 `reports/` 的内容会公开可见——**涉及小熊内部数据、未公开机型、商务信息的，落笔前先想一遍能不能公开**；
+      ③ 每次提交前跑 `gitleaks detect --no-git --redact -v`
 - [x] 补装工具：`rg` `gitleaks` `gh` `bun` `uv` 已装（2026-08-15，brew，均验证过版本）
 - [ ] 对抗性评审要用的**第二谱系**（`codex` / `opencode`）一个都还没有 —— 少一双不同来路的眼睛，见 `bash scripts/check-tools.sh`
 - [ ] `.42cog/real.md` `cog.md` `meta.md` 仍是模板占位，待 `xbd-research` 那一步填实
