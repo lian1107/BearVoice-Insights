@@ -1,0 +1,32 @@
+{
+  "name": "bearvoice-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc --noEmit && vite build",
+    "dev": "vite --host 0.0.0.0",
+    "test": "bun test tests",
+    "test:e2e": "playwright test",
+    "test:e2e:compose": "playwright test --config=playwright.compose.config.ts"
+  },
+  "dependencies": {
+    "lucide-react": "^1.31.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-is": "19.2.0",
+    "recharts": "^3.10.1"
+  },
+  "devDependencies": {
+    "@happy-dom/global-registrator": "^20.11.2",
+    "@playwright/test": "^1.62.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/bun": "^1.3.14",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.0.5",
+    "happy-dom": "^20.11.2",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.1"
+  }
+}

@@ -1,0 +1,23 @@
+import { defineConfig, devices } from "@playwright/test";
+
+
+export default defineConfig({
+  testDir: "./e2e",
+  testIgnore: "real-compose.spec.ts",
+  fullyParallel: true,
+  reporter: "line",
+  use: {
+    baseURL: "http://127.0.0.1:4174",
+    screenshot: "on",
+    trace: "retain-on-failure",
+  },
+  webServer: {
+    command: "bun run dev -- --port 4174",
+    url: "http://127.0.0.1:4174",
+    reuseExistingServer: true,
+  },
+  projects: [
+    { name: "chromium", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } } },
+    { name: "mobile-chromium", use: { ...devices["Pixel 5"], viewport: { width: 390, height: 844 } } },
+  ],
+});

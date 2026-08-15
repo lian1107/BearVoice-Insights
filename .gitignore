@@ -8,6 +8,9 @@ _archive/*
 # 例外：需入库可追溯的下线件，目录名以 -delisted 结尾，带 README 说明为什么下线
 !_archive/*-delisted/
 
+# Git 隔离工作区：本地开发副本，不进入主仓库
+.worktrees/
+
 # ── 第二组 外部参考：本地留存，仅 README 入库 ──
 resources/**
 !resources/README.md
@@ -47,3 +50,8 @@ __pycache__/
 *.pyc
 node_modules/
 .venv/
+.pytest_cache/
+platform/.data/
+platform/frontend/dist/
+platform/frontend/playwright-report/
+platform/frontend/test-results/
