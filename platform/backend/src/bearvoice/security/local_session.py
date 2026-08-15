@@ -17,7 +17,10 @@ class StoredLocalSession:
 class LocalDevSessionStore:
     """Process-local development sessions; raw tokens are never retained."""
 
-    def __init__(self) -> None:
+    def __init__(self, *, max_sessions: int = 256) -> None:
+        if max_sessions < 1:
+            raise ValueError("本地开发会话容量必须大于零")
+        self._max_sessions = max_sessions
         self._sessions: dict[str, StoredLocalSession] = {}
 
     @staticmethod
@@ -32,8 +35,20 @@ class LocalDevSessionStore:
     ) -> tuple[str, datetime]:
         if ttl_seconds < 60 or ttl_seconds > 86_400:
             raise ValueError("本地开发会话有效期必须在 60 秒到 24 小时之间")
+        now = datetime.now(UTC)
+        self._sessions = {
+            digest: session
+            for digest, session in self._sessions.items()
+            if session.expires_at > now
+        }
+        while len(self._sessions) >= self._max_sessions:
+            oldest = min(
+                self._sessions,
+                key=lambda digest: self._sessions[digest].expires_at,
+            )
+            self._sessions.pop(oldest, None)
         token = secrets.token_urlsafe(32)
-        expires_at = datetime.now(UTC) + timedelta(seconds=ttl_seconds)
+        expires_at = now + timedelta(seconds=ttl_seconds)
         self._sessions[self._digest(token)] = StoredLocalSession(
             claims=dict(claims),
             expires_at=expires_at,

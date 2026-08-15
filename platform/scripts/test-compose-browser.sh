@@ -9,7 +9,7 @@ docker-compose --env-file .env.example up -d --build \
   db cache temporal temporal-ui migrate api worker web
 
 for attempt in $(seq 1 30); do
-  if curl -fsS http://127.0.0.1:8000/api/health >/dev/null; then
+  if curl -fsS http://127.0.0.1:8000/api/ready >/dev/null; then
     break
   fi
   if [ "$attempt" -eq 30 ]; then

@@ -28,15 +28,8 @@ export class AuthenticationRequiredError extends Error {
 }
 
 
-function authorizationHeaders(): HeadersInit {
-  const token = window.sessionStorage.getItem("bearvoice_access_token");
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
-
 async function getJson<T>(path: string): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: authorizationHeaders(),
     credentials: "same-origin",
   });
   if (!response.ok) {
@@ -57,7 +50,6 @@ async function sendJson<T>(path: string, body: unknown): Promise<T> {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...authorizationHeaders(),
     },
     body: JSON.stringify(body),
     credentials: "same-origin",

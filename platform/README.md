@@ -14,6 +14,8 @@
 - `.env` 不入库；从 `.env.example` 创建本地配置后再替换本地密码。
 - 开发缓存使用 Valkey 的 Redis 兼容协议，避免引入 AGPL 服务依赖。
 - 本地开发服务仅绑定 `127.0.0.1`；短期登录会话使用 HttpOnly、SameSite Cookie，API 重启后自动失效。
+- Cookie 写操作强制校验同源 Origin；前端不在 Web Storage 保存访问令牌。
+- `/api/health` 只表示进程存活；流量与自动化必须使用会检查数据库和生产配置的 `/api/ready`。
 
 ## 首次启动
 
@@ -78,6 +80,7 @@ shasum -a 256 ../_tmp/20260815-bearvoice-backup/bearvoice.dump
 ## 生产边界
 
 - 正式 SSO、生产 Kubernetes、外部 PLM 写回和新增平台数据源尚未接通。
+- 多产品线来源管理员范围、数据保留执行任务与 Temporal 生产网络认证必须在企业接入时补齐。
 - 开发环境使用 `platform/.data/objects`；生产仅接受管理员 allowlist 中的 HTTPS S3 端点，不内置 MinIO。
 - 直接依赖与容器许可证见 `platform/licenses.md`；升级依赖后必须重新核对完整 SBOM。
 

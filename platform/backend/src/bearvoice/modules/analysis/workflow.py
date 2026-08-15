@@ -19,6 +19,7 @@ class PhaseActivityInput:
     input_hash: str
     idempotency_key: str
     cache_only: bool
+    reviewer_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -73,6 +74,7 @@ class AnalysisWorkflow:
                         f"{input_data.run_id}:{phase}:{input_data.input_hash}"
                     ),
                     cache_only=input_data.cache_only,
+                    reviewer_id=None,
                 ),
                 start_to_close_timeout=timedelta(minutes=5),
                 retry_policy=RetryPolicy(
@@ -97,6 +99,7 @@ class AnalysisWorkflow:
                     f"{input_data.run_id}:publish:{input_data.input_hash}"
                 ),
                 cache_only=input_data.cache_only,
+                reviewer_id=self.approved_by,
             ),
             start_to_close_timeout=timedelta(minutes=5),
             retry_policy=RetryPolicy(maximum_attempts=3),

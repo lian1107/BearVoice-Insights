@@ -10,11 +10,13 @@ from sqlalchemy import (
     DateTime,
     Float,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
     UniqueConstraint,
     func,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -50,6 +52,11 @@ class Source(IdTimestampMixin, Base):
 
 class IngestionBatch(IdTimestampMixin, Base):
     __tablename__ = "ingestion_batches"
+    __table_args__ = (
+        UniqueConstraint(
+            "source_id", "file_hash", name="uq_ingestion_source_file_hash"
+        ),
+    )
 
     source_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("sources.id", ondelete="RESTRICT"), nullable=False, index=True
@@ -384,6 +391,12 @@ class GoldenExample(IdTimestampMixin, Base):
             "voice_record_id",
             name="uq_golden_sample_run_seed_voice",
         ),
+        UniqueConstraint(
+            "analysis_run_id",
+            "sampling_seed",
+            "sample_order",
+            name="uq_golden_sample_run_seed_order",
+        ),
     )
 
     analysis_run_id: Mapped[uuid.UUID] = mapped_column(
@@ -453,6 +466,18 @@ class EvaluationRun(IdTimestampMixin, Base):
 
 class ModelRelease(IdTimestampMixin, Base):
     __tablename__ = "model_releases"
+    __table_args__ = (
+        UniqueConstraint(
+            "evaluation_run_id",
+            name="uq_model_release_evaluation_run",
+        ),
+        Index(
+            "uq_model_releases_single_active",
+            "status",
+            unique=True,
+            postgresql_where=text("status = 'active'"),
+        ),
+    )
 
     model_version: Mapped[str] = mapped_column(String(200), nullable=False)
     prompt_version: Mapped[str] = mapped_column(String(200), nullable=False)

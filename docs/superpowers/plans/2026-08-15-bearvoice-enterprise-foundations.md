@@ -106,7 +106,7 @@ platform/
 - Consumes: 设计规格中的私有化边界和 `platform/` 顶层目录协议。
 - Produces: `bearvoice.main:create_app() -> FastAPI`、`GET /api/health`、可渲染的前端应用壳、统一的 `platform/` 验证命令。
 
-- [ ] **Step 1: 写后端健康检查失败测试**
+- [x] **Step 1: 写后端健康检查失败测试**
 
 ```python
 from fastapi.testclient import TestClient
@@ -123,12 +123,12 @@ def test_health_reports_service_and_no_model_egress():
     }
 ```
 
-- [ ] **Step 2: 运行测试并确认因应用尚不存在而失败**
+- [x] **Step 2: 运行测试并确认因应用尚不存在而失败**
 
 Run: `cd platform/backend && uv run --python 3.12 pytest tests/unit/test_health.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'bearvoice'`.
 
-- [ ] **Step 3: 创建最小后端应用和安全配置**
+- [x] **Step 3: 创建最小后端应用和安全配置**
 
 ```python
 from fastapi import FastAPI
@@ -152,7 +152,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
 `Settings` 使用 `pydantic-settings`，`model_egress_enabled` 默认 `False`；`.env.example` 只写本地非敏感地址和变量名，不写凭据值。
 
-- [ ] **Step 4: 写前端应用壳失败测试**
+- [x] **Step 4: 写前端应用壳失败测试**
 
 ```tsx
 import { render, screen } from "@testing-library/react";
@@ -165,12 +165,12 @@ test("shows the enterprise product opportunity workspace", () => {
 });
 ```
 
-- [ ] **Step 5: 运行前端测试并确认因应用尚不存在而失败**
+- [x] **Step 5: 运行前端测试并确认因应用尚不存在而失败**
 
 Run: `cd platform/frontend && bun test tests/App.test.tsx`
 Expected: FAIL because `../src/app/App` cannot be resolved.
 
-- [ ] **Step 6: 创建前端应用壳、依赖锁和平台运行说明**
+- [x] **Step 6: 创建前端应用壳、依赖锁和平台运行说明**
 
 `App.tsx` 先提供可测试的产品壳：
 
@@ -194,7 +194,7 @@ export function App() {
 
 两个 Dockerfile 固定非 root 运行用户；后端镜像使用 Python 3.12 与锁定的 `uv.lock`，前端构建产物由非 root 静态服务进程提供。Compose 只引用官方或项目已核验许可证的镜像。
 
-- [ ] **Step 7: 运行任务级验证**
+- [x] **Step 7: 运行任务级验证**
 
 Run: `cd platform/backend && uv run --python 3.12 pytest tests/unit/test_health.py -v`
 Expected: PASS, 1 test.
@@ -205,7 +205,7 @@ Expected: PASS, 1 test.
 Run: `cd platform && docker compose config --quiet`
 Expected: exit 0; if Docker CLI is absent, install open-source Colima、Docker CLI and Compose from Homebrew before rerunning, then start Colima.
 
-- [ ] **Step 8: 提交平台骨架**
+- [x] **Step 8: 提交平台骨架**
 
 ```bash
 git add platform
@@ -231,7 +231,7 @@ git commit -m "feat: 建立企业平台骨架" -m "Change-By:      ai\nAgent:   
 - Consumes: Task 1 `Settings.database_url`。
 - Produces: `Base`、`async_session_factory`、`VoiceRecord`、`Signal`、`TaxonomyVersion`、`TaxonomyRevision`、`Opportunity`、`OpportunityEvidence`、`CompetitorEvidence`、`ActionItem`、`OutcomeMeasurement`、`GoldenExample`、`EvaluationRun`、`AuditEvent`、`OpportunityStatus`、`ReviewDecisionType`、`Permission` 和数据库首版迁移。
 
-- [ ] **Step 1: 写数据库结构失败测试**
+- [x] **Step 1: 写数据库结构失败测试**
 
 ```python
 REQUIRED_TABLES = {
@@ -248,12 +248,12 @@ async def test_initial_migration_creates_enterprise_foundation_tables(db_inspect
     assert REQUIRED_TABLES <= set(await db_inspector.table_names())
 ```
 
-- [ ] **Step 2: 运行迁移测试并确认因迁移不存在而失败**
+- [x] **Step 2: 运行迁移测试并确认因迁移不存在而失败**
 
 Run: `cd platform/backend && uv run pytest tests/integration/test_migrations.py -v`
 Expected: FAIL because Alembic configuration or required tables do not exist.
 
-- [ ] **Step 3: 写领域状态失败测试**
+- [x] **Step 3: 写领域状态失败测试**
 
 ```python
 import pytest
@@ -274,12 +274,12 @@ def test_opportunity_cannot_skip_human_review():
     assert OpportunityStatus.DRAFT.can_transition_to(OpportunityStatus.ACCEPTED) is False
 ```
 
-- [ ] **Step 4: 运行领域测试并确认缺少规则实现**
+- [x] **Step 4: 运行领域测试并确认缺少规则实现**
 
 Run: `cd platform/backend && uv run pytest tests/unit/test_domain_rules.py -v`
 Expected: FAIL because enums and schemas do not exist.
 
-- [ ] **Step 5: 实现模型、约束和首版迁移**
+- [x] **Step 5: 实现模型、约束和首版迁移**
 
 在 `models.py` 中使用 UUID 主键、UTC 时间、外键、唯一键和 JSONB 元数据；`embeddings.vector` 使用 pgvector。关键数据库约束包括：
 
@@ -291,12 +291,12 @@ CheckConstraint("evidence_direction IN ('support', 'oppose')")
 
 状态转换由 `OpportunityStatus.can_transition_to()` 的显式映射控制；新品型和改进型证据门槛在 Pydantic 命令校验与服务层事务中各检查一次。
 
-- [ ] **Step 6: 运行数据库和领域测试**
+- [x] **Step 6: 运行数据库和领域测试**
 
 Run: `cd platform/backend && uv run alembic upgrade head && uv run pytest tests/unit/test_domain_rules.py tests/integration/test_migrations.py -v`
 Expected: PASS; PostgreSQL 中存在全部必需表和 `vector` 扩展。
 
-- [ ] **Step 7: 提交领域底座**
+- [x] **Step 7: 提交领域底座**
 
 ```bash
 git add platform/backend
@@ -322,7 +322,7 @@ git commit -m "feat: 建立企业原声领域模型" -m "Change-By:      ai\nAge
 - Consumes: Task 2 ORM；`vault/raw/20260815-赛题资料/天猫咨询原声-1500条.csv`；`_build/analyze/extract-*.json`；`reports/improve-养生壶/聚类明细.json`。
 - Produces: `SourceAdapter`、`CsvVoiceAdapter`、`sanitize_voice_text()`、`strict_cache_path(prompt: str, tag: str) -> Path`、`load_cached_json(prompt, tag) -> list|dict`、`load_legacy_snapshot(repo_root: Path) -> LegacySnapshot`、`import_legacy_snapshot(session, snapshot) -> UUID`。
 
-- [ ] **Step 1: 写严格缓存失败测试**
+- [x] **Step 1: 写严格缓存失败测试**
 
 ```python
 import pytest
@@ -334,12 +334,12 @@ def test_cache_only_loader_never_calls_a_model(tmp_path):
         load_cached_json("not-cached", "extract", build_dir=tmp_path)
 ```
 
-- [ ] **Step 2: 运行并确认缓存接口缺失**
+- [x] **Step 2: 运行并确认缓存接口缺失**
 
 Run: `cd platform/backend && uv run pytest tests/unit/test_strict_cache.py -v`
 Expected: FAIL because `bearvoice.modules.analysis.cache` does not exist.
 
-- [ ] **Step 3: 实现内容哈希路径和严格只读加载**
+- [x] **Step 3: 实现内容哈希路径和严格只读加载**
 
 ```python
 class CacheMiss(RuntimeError):
@@ -355,7 +355,7 @@ def load_cached_json(prompt: str, tag: str, build_dir: Path) -> object:
 
 把 `scripts/analyze.py` 的缓存路径计算提取为兼容函数，但不改变现有普通运行行为；迁移模块只调用严格加载器。
 
-- [ ] **Step 4: 写历史迁移对账失败测试**
+- [x] **Step 4: 写历史迁移对账失败测试**
 
 ```python
 async def test_imports_verified_kettle_baseline_once(db_session, repo_root):
@@ -372,7 +372,7 @@ async def test_imports_verified_kettle_baseline_once(db_session, repo_root):
     assert await count_analysis_runs(db_session, provider="legacy-claude-cache") == 1
 ```
 
-- [ ] **Step 5: 写 CSV 适配和隐私门禁失败测试**
+- [x] **Step 5: 写 CSV 适配和隐私门禁失败测试**
 
 ```python
 async def test_csv_adapter_is_idempotent_and_never_persists_raw_address(session, kettle_csv):
@@ -387,12 +387,12 @@ async def test_csv_adapter_is_idempotent_and_never_persists_raw_address(session,
 
 `SourceAdapter` 协议固定为 `validate → normalize → dedupe → privacy_gate → persist`，后续平台适配器不得绕过隐私门禁。
 
-- [ ] **Step 6: 运行并确认迁移、适配和隐私服务缺失**
+- [x] **Step 6: 运行并确认迁移、适配和隐私服务缺失**
 
 Run: `cd platform/backend && uv run pytest tests/unit/test_privacy_gate.py tests/integration/test_csv_adapter.py tests/integration/test_legacy_import.py -v`
 Expected: FAIL because ingest and legacy import functions do not exist.
 
-- [ ] **Step 7: 实现适配协议、隐私门禁和确定性缓存映射**
+- [x] **Step 7: 实现适配协议、隐私门禁和确定性缓存映射**
 
 隐私门禁先复用现有地址规则，再通过可注册识别器扩展手机号、订单号和自定义实体；`PrivacyFinding` 只保存实体类型、位置、识别器和处理动作，不保存命中的原值。迁移模块使用现有 `EXTRACT_RULES`、产品筛选和 40 条批次规则重建每批提示词哈希，将缓存中的相对索引映射回原声 ID。导入前一次性验证 10 个预期缓存全部存在；任何一个缺失时事务回滚且不调用模型。历史聚类无法恢复校准置信度，统一写 `confidence=None`、`confidence_status="uncalibrated"`。
 
@@ -409,7 +409,7 @@ def load_legacy_snapshot(repo_root: Path) -> LegacySnapshot:
     return LegacySnapshot.from_verified_inputs(rows, cached_batches, load_cluster_detail(repo_root))
 ```
 
-- [ ] **Step 8: 运行迁移、隐私、旧测试和数据库对账**
+- [x] **Step 8: 运行迁移、隐私、旧测试和数据库对账**
 
 Run: `cd platform/backend && uv run pytest tests/unit/test_strict_cache.py tests/unit/test_privacy_gate.py tests/integration/test_csv_adapter.py tests/integration/test_legacy_import.py -v`
 Expected: PASS.
@@ -417,7 +417,7 @@ Expected: PASS.
 Run: `python3 -m unittest discover -s tests -v`
 Expected: PASS, existing 4 tests.
 
-- [ ] **Step 9: 提交数据接入和历史迁移**
+- [x] **Step 9: 提交数据接入和历史迁移**
 
 ```bash
 git add scripts/analyze.py platform/backend
@@ -441,7 +441,7 @@ git commit -m "feat: 建立数据接入并迁移养生壶结果" -m "Change-By: 
 - Consumes: `AnalysisRun`、严格缓存服务、数据库会话。
 - Produces: `AnalysisWorkflow.run(input: AnalysisWorkflowInput) -> AnalysisWorkflowResult`、`approve_taxonomy` signal、可查询阶段历史。
 
-- [ ] **Step 1: 写失败恢复和人工暂停测试**
+- [x] **Step 1: 写失败恢复和人工暂停测试**
 
 ```python
 async def test_workflow_retries_activity_and_waits_for_human_approval(temporal_env):
@@ -458,12 +458,12 @@ async def test_workflow_retries_activity_and_waits_for_human_approval(temporal_e
     assert temporal_env.activity_attempts("extract_signals") == 2
 ```
 
-- [ ] **Step 2: 运行并确认工作流缺失**
+- [x] **Step 2: 运行并确认工作流缺失**
 
 Run: `cd platform/backend && uv run pytest tests/workflow/test_analysis_workflow.py -v`
 Expected: FAIL because `AnalysisWorkflow` does not exist.
 
-- [ ] **Step 3: 实现显式阶段、重试、查询和人工 signal**
+- [x] **Step 3: 实现显式阶段、重试、查询和人工 signal**
 
 ```python
 @workflow.defn
@@ -483,12 +483,12 @@ class AnalysisWorkflow:
 
 主流程阶段固定为 `validate → privacy_gate → extract → embed → cluster → draft_opportunities → quality_gate → pending_review → publish`。每个 Activity 使用 `run_id + phase + input_hash` 幂等键；`cache_only=True` 时任何缓存缺失立即失败。
 
-- [ ] **Step 4: 运行工作流测试并确认最小实现通过**
+- [x] **Step 4: 运行工作流测试并确认最小实现通过**
 
 Run: `cd platform/backend && uv run pytest tests/workflow/test_analysis_workflow.py -v`
 Expected: PASS; the workflow retries once, pauses for review and resumes after the signal.
 
-- [ ] **Step 5: 写运行历史失败测试**
+- [x] **Step 5: 写运行历史失败测试**
 
 ```python
 async def test_failed_run_records_redacted_machine_readable_diagnostics(session, failed_cluster_activity):
@@ -510,12 +510,12 @@ def test_trace_attributes_exclude_prompt_and_customer_text():
     assert set(attributes) == {"run_id", "phase", "provider", "model", "input_hash"}
 ```
 
-- [ ] **Step 6: 运行并确认诊断记录尚未实现**
+- [x] **Step 6: 运行并确认诊断记录尚未实现**
 
 Run: `cd platform/backend && uv run pytest tests/integration/test_analysis_run_history.py tests/unit/test_trace_redaction.py -v`
 Expected: FAIL because failure diagnostics are not persisted.
 
-- [ ] **Step 7: 实现机器可读诊断**
+- [x] **Step 7: 实现机器可读诊断**
 
 失败运行保存 `phase`、`error_code`、`provider`、`model`、`attempts` 和已完成阶段；错误正文在写入前脱敏。OpenTelemetry span 只携带运行 ID、阶段、提供商、模型和输入哈希，可导出到企业批准的自托管可观测平台，不记录提示词或客户文本。
 
@@ -535,12 +535,12 @@ await record_run_failure(
 )
 ```
 
-- [ ] **Step 8: 运行工作流和运行历史测试**
+- [x] **Step 8: 运行工作流和运行历史测试**
 
 Run: `cd platform/backend && uv run pytest tests/workflow tests/integration/test_analysis_run_history.py tests/unit/test_trace_redaction.py -v`
 Expected: PASS; workflow can resume without repeating completed cache-backed extraction.
 
-- [ ] **Step 9: 提交耐久工作流**
+- [x] **Step 9: 提交耐久工作流**
 
 ```bash
 git add platform/backend
@@ -563,7 +563,7 @@ git commit -m "feat: 增加耐久分析工作流" -m "Change-By:      ai\nAgent:
 - Consumes: Task 2 领域模型和状态枚举。
 - Produces: `apply_taxonomy_revision(session, command) -> TaxonomyVersion`、`review_opportunity(session, command) -> Opportunity`、`transition_opportunity(session, command) -> Opportunity`。
 
-- [ ] **Step 1: 写分类法不可变性失败测试**
+- [x] **Step 1: 写分类法不可变性失败测试**
 
 ```python
 async def test_merge_creates_new_taxonomy_version_without_mutating_source(session, seeded_taxonomy):
@@ -581,12 +581,12 @@ async def test_merge_creates_new_taxonomy_version_without_mutating_source(sessio
     assert await original_cluster_names(session, seeded_taxonomy.id) == ["原类一", "原类二"]
 ```
 
-- [ ] **Step 2: 运行并确认修订服务缺失**
+- [x] **Step 2: 运行并确认修订服务缺失**
 
 Run: `cd platform/backend && uv run pytest tests/unit/test_taxonomy_revision.py -v`
 Expected: FAIL because review service does not exist.
 
-- [ ] **Step 3: 实现改名、合并、拆分、移出和恢复命令**
+- [x] **Step 3: 实现改名、合并、拆分、移出和恢复命令**
 
 所有命令在单个事务中创建 `TaxonomyVersion`、`TaxonomyRevision` 和新成员映射；不更新父版本。成员主归属在一个版本内唯一，异常成员可没有主聚类。
 
@@ -600,12 +600,12 @@ async def apply_taxonomy_revision(session, command):
     return revised
 ```
 
-- [ ] **Step 4: 运行分类法修订测试并确认通过**
+- [x] **Step 4: 运行分类法修订测试并确认通过**
 
 Run: `cd platform/backend && uv run pytest tests/unit/test_taxonomy_revision.py -v`
 Expected: PASS; source taxonomy remains unchanged.
 
-- [ ] **Step 5: 写机会证据与安全覆盖失败测试**
+- [x] **Step 5: 写机会证据与安全覆盖失败测试**
 
 ```python
 async def test_safety_opportunity_bypasses_volume_ranking_but_still_requires_review(session):
@@ -622,12 +622,12 @@ async def test_safety_opportunity_bypasses_volume_ranking_but_still_requires_rev
     assert opportunity.status == OpportunityStatus.PENDING_REVIEW
 ```
 
-- [ ] **Step 6: 运行并确认机会服务尚未实现**
+- [x] **Step 6: 运行并确认机会服务尚未实现**
 
 Run: `cd platform/backend && uv run pytest tests/unit/test_opportunity_review.py -v`
 Expected: FAIL because evidence gates and safety override are missing.
 
-- [ ] **Step 7: 实现证据门槛、审核决定和状态转换**
+- [x] **Step 7: 实现证据门槛、审核决定和状态转换**
 
 改进型必须至少 3 个独立原声键，新品型至少 5 个且跨场景或人群；证据不足只能保存为 `draft`。接受、重大修改和驳回都要求理由并写 `AuditEvent`。
 
@@ -641,12 +641,12 @@ async def review_opportunity(session, command: ReviewOpportunityCommand) -> Oppo
     return opportunity
 ```
 
-- [ ] **Step 8: 运行机会审核测试并确认通过**
+- [x] **Step 8: 运行机会审核测试并确认通过**
 
 Run: `cd platform/backend && uv run pytest tests/unit/test_opportunity_review.py tests/integration/test_review_audit.py -v`
 Expected: PASS; reviews require reasons and create audit events.
 
-- [ ] **Step 9: 写行动结果闭环失败测试**
+- [x] **Step 9: 写行动结果闭环失败测试**
 
 ```python
 async def test_completed_action_requires_outcome_measurement(session, accepted_opportunity):
@@ -655,12 +655,12 @@ async def test_completed_action_requires_outcome_measurement(session, accepted_o
         await complete_action_item(session, action.id, outcome=None)
 ```
 
-- [ ] **Step 10: 运行并确认行动完成门禁尚未实现**
+- [x] **Step 10: 运行并确认行动完成门禁尚未实现**
 
 Run: `cd platform/backend && uv run pytest tests/unit/test_action_outcome.py -v`
 Expected: FAIL because `complete_action_item()` does not enforce outcome evidence.
 
-- [ ] **Step 11: 实现行动结果闭环**
+- [x] **Step 11: 实现行动结果闭环**
 
 ```python
 async def complete_action_item(session, action_id: UUID, outcome: OutcomeDraft | None):
@@ -673,12 +673,12 @@ async def complete_action_item(session, action_id: UUID, outcome: OutcomeDraft |
     return action
 ```
 
-- [ ] **Step 12: 运行治理、审核、行动和审计测试**
+- [x] **Step 12: 运行治理、审核、行动和审计测试**
 
 Run: `cd platform/backend && uv run pytest tests/unit/test_taxonomy_revision.py tests/unit/test_opportunity_review.py tests/unit/test_action_outcome.py tests/integration/test_review_audit.py -v`
 Expected: PASS; original taxonomy remains unchanged and every decision has one audit event.
 
-- [ ] **Step 13: 提交治理闭环**
+- [x] **Step 13: 提交治理闭环**
 
 ```bash
 git add platform/backend
@@ -699,7 +699,7 @@ git commit -m "feat: 增加聚类治理与机会审核" -m "Change-By:      ai\n
 - Consumes: 历史分析运行、信号、聚类、人工审核。
 - Produces: `build_stratified_sample(session, run_id, size=100, seed=20260815) -> list[GoldenExample]`、`submit_golden_review()`、`adjudicate_golden_example()`、`evaluate_release()`、`rollback_release()`。
 
-- [ ] **Step 1: 写分层抽样失败测试**
+- [x] **Step 1: 写分层抽样失败测试**
 
 ```python
 async def test_sample_is_deterministic_and_covers_signals_clusters_and_hard_cases(session, legacy_run):
@@ -713,12 +713,12 @@ async def test_sample_is_deterministic_and_covers_signals_clusters_and_hard_case
     assert any(x.hard_case == "safety" for x in first)
 ```
 
-- [ ] **Step 2: 运行并确认评测服务缺失**
+- [x] **Step 2: 运行并确认评测服务缺失**
 
 Run: `cd platform/backend && uv run pytest tests/unit/test_stratified_sample.py -v`
 Expected: FAIL because evaluation service does not exist.
 
-- [ ] **Step 3: 实现确定性分层抽样**
+- [x] **Step 3: 实现确定性分层抽样**
 
 先按安全样本、多轮难例、四类信号和 10 个聚类分配最低配额，再按固定种子从剩余记录补足 100 条；相同运行和种子必须返回相同 ID 顺序。所有样本状态初始为 `pending_human_review`。
 
@@ -730,12 +730,12 @@ def choose_stratified_rows(rows, size: int, seed: int):
     return (selected + remaining)[:size]
 ```
 
-- [ ] **Step 4: 运行分层抽样测试并确认通过**
+- [x] **Step 4: 运行分层抽样测试并确认通过**
 
 Run: `cd platform/backend && uv run pytest tests/unit/test_stratified_sample.py -v`
 Expected: PASS with deterministic 100-record coverage.
 
-- [ ] **Step 5: 写双人审核与发布门禁失败测试**
+- [x] **Step 5: 写双人审核与发布门禁失败测试**
 
 ```python
 async def test_model_release_is_blocked_when_safety_regresses(session, approved_golden_set):
@@ -758,12 +758,12 @@ async def test_rollback_reactivates_previous_approved_release(session, active_re
     assert await has_audit_event(session, "model_release.rolled_back")
 ```
 
-- [ ] **Step 6: 运行并确认发布门禁尚未实现**
+- [x] **Step 6: 运行并确认发布门禁尚未实现**
 
 Run: `cd platform/backend && uv run pytest tests/unit/test_golden_review.py tests/integration/test_release_gate.py -v`
 Expected: FAIL because dual review, adjudication and blocking gates are missing.
 
-- [ ] **Step 7: 实现审核、仲裁和门禁**
+- [x] **Step 7: 实现审核、仲裁和门禁**
 
 两名审核者独立提交；一致时可进入 `approved`，不一致时进入 `disputed` 并要求第三人仲裁。证据引用不可解析、隐私泄漏、聚类成员重复或安全样本退化均为阻断门禁。`rollback_release()` 只允许回到曾通过门禁的版本，并在同一事务中停用当前版本、启用目标版本和写审计事件。
 
@@ -776,12 +776,12 @@ BLOCKING_GATES = {
 }
 ```
 
-- [ ] **Step 8: 运行评测测试并导出待审核清单**
+- [x] **Step 8: 运行评测测试并导出待审核清单**
 
 Run: `cd platform/backend && uv run pytest tests/unit/test_stratified_sample.py tests/unit/test_golden_review.py tests/integration/test_release_gate.py -v`
 Expected: PASS; 100 records remain pending human review and are not labeled as golden truth.
 
-- [ ] **Step 9: 提交质量中心后端**
+- [x] **Step 9: 提交质量中心后端**
 
 ```bash
 git add platform/backend
@@ -803,7 +803,7 @@ git commit -m "feat: 建立黄金样本与发布门禁" -m "Change-By:      ai\n
 - Consumes: `Settings`、`Permission`、产品线字段、审计事件。
 - Produces: `Principal`、`require_permission(permission)`、`assert_product_scope()`、`ModelGateway.generate(request)`。
 
-- [ ] **Step 1: 写默认拒绝模型外发失败测试**
+- [x] **Step 1: 写默认拒绝模型外发失败测试**
 
 ```python
 import pytest
@@ -815,12 +815,12 @@ async def test_model_gateway_denies_egress_without_admin_configuration():
         await ModelGateway.from_settings().generate({"purpose": "cluster_label", "text": "脱敏文本"})
 ```
 
-- [ ] **Step 2: 运行并确认网关缺失**
+- [x] **Step 2: 运行并确认网关缺失**
 
 Run: `cd platform/backend && uv run pytest tests/unit/test_model_gateway.py -v`
 Expected: FAIL because model gateway does not exist.
 
-- [ ] **Step 3: 实现提供商白名单、用途白名单和脱敏前置检查**
+- [x] **Step 3: 实现提供商白名单、用途白名单和脱敏前置检查**
 
 只有 `model_egress_enabled=True`、提供商在批准名单、用途在批准名单、载荷通过隐私门禁时才调用适配器。网关日志只保存哈希、提供商、模型、用途、令牌计数和运行 ID。
 
@@ -834,12 +834,12 @@ async def generate(self, request: ModelRequest) -> ModelResponse:
     return await self.adapters[request.provider].generate(request)
 ```
 
-- [ ] **Step 4: 运行模型网关测试并确认通过**
+- [x] **Step 4: 运行模型网关测试并确认通过**
 
 Run: `cd platform/backend && uv run pytest tests/unit/test_model_gateway.py -v`
 Expected: PASS; egress is denied by default.
 
-- [ ] **Step 5: 写角色与产品线越权失败测试**
+- [x] **Step 5: 写角色与产品线越权失败测试**
 
 ```python
 async def test_product_manager_cannot_read_another_product_line(api_client, product_manager_token):
@@ -851,12 +851,12 @@ async def test_product_manager_cannot_read_another_product_line(api_client, prod
     assert response.json()["detail"] == "无权访问该产品线"
 ```
 
-- [ ] **Step 6: 运行并确认权限检查尚未实现**
+- [x] **Step 6: 运行并确认权限检查尚未实现**
 
 Run: `cd platform/backend && uv run pytest tests/unit/test_permissions.py tests/integration/test_product_scope.py -v`
 Expected: FAIL because Principal and product scope checks are missing.
 
-- [ ] **Step 7: 实现 OIDC Principal、权限矩阵和数据范围检查**
+- [x] **Step 7: 实现 OIDC Principal、权限矩阵和数据范围检查**
 
 生产只接受经配置 issuer/audience 验证的 OIDC JWT；测试和本地开发使用独立 `dev_auth_enabled` 配置与固定测试签名，不存在无认证的生产回退。所有列表查询先应用产品线范围，再执行聚合。
 
@@ -868,12 +868,12 @@ def require_product_scope(product_line: str, principal: Principal) -> None:
         raise HTTPException(status_code=403, detail="无权访问该产品线")
 ```
 
-- [ ] **Step 8: 运行安全测试**
+- [x] **Step 8: 运行安全测试**
 
 Run: `cd platform/backend && uv run pytest tests/unit/test_permissions.py tests/unit/test_model_gateway.py tests/integration/test_product_scope.py -v`
 Expected: PASS; unauthorized and out-of-scope access return 401/403 without disclosing object existence.
 
-- [ ] **Step 9: 提交安全与模型网关**
+- [x] **Step 9: 提交安全与模型网关**
 
 ```bash
 git add platform/backend
@@ -901,7 +901,7 @@ git commit -m "feat: 增加企业权限与模型外发控制" -m "Change-By:    
 - Consumes: Tasks 2-7 领域服务与权限依赖。
 - Produces: `/api/dashboard`、`/api/taxonomies`、`/api/opportunities`、`/api/evidence/{id}`、`/api/evaluations`、`DashboardSnapshot`。
 
-- [ ] **Step 1: 写赛事驾驶舱对账失败测试**
+- [x] **Step 1: 写赛事驾驶舱对账失败测试**
 
 ```python
 async def test_kettle_dashboard_reconciles_with_verified_legacy_report(api_client, management_token):
@@ -917,12 +917,12 @@ async def test_kettle_dashboard_reconciles_with_verified_legacy_report(api_clien
     assert payload["coverage"] == {"channel": "天猫", "days": 3, "trend_allowed": False}
 ```
 
-- [ ] **Step 2: 运行并确认 API 缺失**
+- [x] **Step 2: 运行并确认 API 缺失**
 
 Run: `cd platform/backend && uv run pytest tests/integration/test_dashboard_api.py -v`
 Expected: FAIL with 404 or missing route.
 
-- [ ] **Step 3: 实现统一查询投影和路由**
+- [x] **Step 3: 实现统一查询投影和路由**
 
 `DashboardSnapshot` 同时返回绝对数、占比、分母、时间范围、来源和数据限制。赛事视图与企业视图共用查询，只改变显示字段和权限，不维护第二套数字。
 
@@ -942,12 +942,12 @@ async def dashboard(product: str, view: DashboardView, principal=Depends(current
     return await get_dashboard_snapshot(product=product, view=view, principal=principal)
 ```
 
-- [ ] **Step 4: 运行驾驶舱 API 测试并确认通过**
+- [x] **Step 4: 运行驾驶舱 API 测试并确认通过**
 
 Run: `cd platform/backend && uv run pytest tests/integration/test_dashboard_api.py -v`
 Expected: PASS with 370/254/10/9 and explicit data boundary.
 
-- [ ] **Step 5: 写证据下钻失败测试**
+- [x] **Step 5: 写证据下钻失败测试**
 
 ```python
 async def test_evidence_response_contains_sanitized_quote_and_provenance(api_client, reviewer_token):
@@ -962,12 +962,12 @@ async def test_evidence_response_contains_sanitized_quote_and_provenance(api_cli
     assert body["analysis_run_id"]
 ```
 
-- [ ] **Step 6: 运行并确认证据 API 与对账尚未实现**
+- [x] **Step 6: 运行并确认证据 API 与对账尚未实现**
 
 Run: `cd platform/backend && uv run pytest tests/integration/test_evidence_api.py tests/integration/test_legacy_reconciliation.py -v`
 Expected: FAIL because evidence projection and reconciliation are missing.
 
-- [ ] **Step 7: 实现证据和修订 API，并完成 Markdown 对账**
+- [x] **Step 7: 实现证据和修订 API，并完成 Markdown 对账**
 
 历史对账逐项比较 API 投影与 `聚类明细.json`；差异输出具体字段并使测试失败。API 不返回未脱敏原文或对象存储内部路径。
 
@@ -981,12 +981,12 @@ def reconcile_legacy_baseline(snapshot: DashboardSnapshot) -> None:
 
 `sources` 路由返回批次质量、隔离数和来源健康度；`admin` 路由只返回无密钥的 OIDC、模型外发和保留策略状态。
 
-- [ ] **Step 8: 运行 API 与对账测试**
+- [x] **Step 8: 运行 API 与对账测试**
 
 Run: `cd platform/backend && uv run pytest tests/integration/test_dashboard_api.py tests/integration/test_evidence_api.py tests/integration/test_legacy_reconciliation.py -v`
 Expected: PASS with exact 370/254/10/9 baseline.
 
-- [ ] **Step 9: 提交 API 和投影**
+- [x] **Step 9: 提交 API 和投影**
 
 ```bash
 git add platform/backend
@@ -1017,7 +1017,7 @@ git commit -m "feat: 提供机会决策与证据 API" -m "Change-By:      ai\nAg
 - Consumes: Task 8 `DashboardSnapshot` JSON。
 - Produces: 可切换赛事/企业视图的 `DashboardPage`，以及可点击的聚类和机会入口。
 
-- [ ] **Step 1: 写首屏决策信息失败测试**
+- [x] **Step 1: 写首屏决策信息失败测试**
 
 ```tsx
 test("competition view leads with evidence-backed decision context", async () => {
@@ -1029,12 +1029,12 @@ test("competition view leads with evidence-backed decision context", async () =>
 });
 ```
 
-- [ ] **Step 2: 运行并确认页面缺失**
+- [x] **Step 2: 运行并确认页面缺失**
 
 Run: `cd platform/frontend && bun test tests/DashboardPage.test.tsx`
 Expected: FAIL because dashboard components do not exist.
 
-- [ ] **Step 3: 实现 API 类型、KPI、信号构成和横向排序条形图**
+- [x] **Step 3: 实现 API 类型、KPI、信号构成和横向排序条形图**
 
 `ClusterRanking` 使用从零开始的横向条形图，直接标注条数和占比；不为单类别轴创建冗余图例。`SignalComposition` 同时显示绝对数和占比。所有图表标题为中性描述，副标题包含分母、时间和来源。
 
@@ -1046,7 +1046,7 @@ const clusterOption = {
 };
 ```
 
-- [ ] **Step 4: 实现机会列表和数据边界提示**
+- [x] **Step 4: 实现机会列表和数据边界提示**
 
 机会按安全覆盖、审核状态、影响面和实施难度分组，不用咨询量单独决定顺序。三天数据限制固定显示在首屏与图表副标题。
 
@@ -1063,7 +1063,7 @@ const clusterOption = {
 
 `router.tsx` 固定六个企业入口：驾驶舱、原声数据、聚类治理、机会中心、质量中心和系统管理；无权限页面不出现在导航中，直接访问仍由后端 403 兜底。
 
-- [ ] **Step 5: 运行前端单元和端到端首屏测试**
+- [x] **Step 5: 运行前端单元和端到端首屏测试**
 
 Run: `cd platform/frontend && bun test tests/DashboardPage.test.tsx`
 Expected: PASS.
@@ -1071,7 +1071,7 @@ Expected: PASS.
 Run: `cd platform/frontend && bunx playwright test e2e/competition-dashboard.spec.ts --project=chromium`
 Expected: PASS; screenshot shows KPI, Top10, opportunities and data boundary without clipping at 1440×900 and 390×844.
 
-- [ ] **Step 6: 提交决策驾驶舱**
+- [x] **Step 6: 提交决策驾驶舱**
 
 ```bash
 git add platform/frontend
@@ -1097,7 +1097,7 @@ git commit -m "feat: 构建赛事与企业决策驾驶舱" -m "Change-By:      a
 - Consumes: Task 8 taxonomy、opportunity、evidence、evaluation API。
 - Produces: 人工可操作的治理、审核、证据和评测工作区。
 
-- [ ] **Step 1: 写证据与审核失败测试**
+- [x] **Step 1: 写证据与审核失败测试**
 
 ```tsx
 test("reviewer can inspect evidence before accepting an opportunity", async () => {
@@ -1111,12 +1111,12 @@ test("reviewer can inspect evidence before accepting an opportunity", async () =
 });
 ```
 
-- [ ] **Step 2: 运行并确认审核界面缺失**
+- [x] **Step 2: 运行并确认审核界面缺失**
 
 Run: `cd platform/frontend && bun test tests/ReviewFlows.test.tsx`
 Expected: FAIL because pages and components do not exist.
 
-- [ ] **Step 3: 实现证据抽屉和聚类治理表单**
+- [x] **Step 3: 实现证据抽屉和聚类治理表单**
 
 证据抽屉显示脱敏原声、来源、日期、运行版本和支持/反对方向。治理表单要求选择改名/合并/拆分/移出/恢复、填写理由并预览新版本；不提供“覆盖当前版本”操作。
 
@@ -1130,7 +1130,7 @@ Expected: FAIL because pages and components do not exist.
 />
 ```
 
-- [ ] **Step 4: 实现机会审核和黄金样本队列**
+- [x] **Step 4: 实现机会审核和黄金样本队列**
 
 接受、重大修改和驳回都必须填写理由；安全机会显示品控复核提醒。黄金样本页面明确区分“模型建议”“审核者一”“审核者二”“仲裁结果”，待审核样本不显示为黄金真相。
 
@@ -1144,7 +1144,7 @@ Expected: FAIL because pages and components do not exist.
 />
 ```
 
-- [ ] **Step 5: 运行单元和端到端审核测试**
+- [x] **Step 5: 运行单元和端到端审核测试**
 
 Run: `cd platform/frontend && bun test tests/ReviewFlows.test.tsx`
 Expected: PASS.
@@ -1152,7 +1152,7 @@ Expected: PASS.
 Run: `cd platform/frontend && bunx playwright test e2e/review-opportunity.spec.ts --project=chromium`
 Expected: PASS; audit timeline contains the review decision and actor.
 
-- [ ] **Step 6: 提交人工治理界面**
+- [x] **Step 6: 提交人工治理界面**
 
 ```bash
 git add platform/frontend
@@ -1183,7 +1183,7 @@ git commit -m "feat: 增加证据与人工治理工作区" -m "Change-By:      a
 - Consumes: Tasks 1-10 所有可运行单元。
 - Produces: 一条经验证的养生壶纵向链路、兼容 Markdown 报告、依赖许可证清单、运行与恢复手册。
 
-- [ ] **Step 1: 写纵向链路失败测试**
+- [x] **Step 1: 写纵向链路失败测试**
 
 ```python
 async def test_kettle_vertical_slice_without_model_calls(system_client, legacy_repo):
@@ -1202,12 +1202,12 @@ async def test_kettle_vertical_slice_without_model_calls(system_client, legacy_r
     assert opportunity.audit_events[-1].action == "opportunity.accepted"
 ```
 
-- [ ] **Step 2: 运行并确认完整链路尚未贯通**
+- [x] **Step 2: 运行并确认完整链路尚未贯通**
 
 Run: `cd platform/backend && uv run pytest tests/e2e/test_kettle_vertical_slice.py -v`
 Expected: FAIL at the first unimplemented integration boundary, not by calling an external model.
 
-- [ ] **Step 3: 写兼容导出和对象存储失败测试**
+- [x] **Step 3: 写兼容导出和对象存储失败测试**
 
 先写兼容导出和本地对象存储的失败测试：
 
@@ -1225,12 +1225,12 @@ def test_filesystem_object_store_rejects_path_escape(tmp_path):
         store.put("../outside.txt", b"secret")
 ```
 
-- [ ] **Step 4: 运行并确认导出和对象存储尚未实现**
+- [x] **Step 4: 运行并确认导出和对象存储尚未实现**
 
 Run: `cd platform/backend && uv run pytest tests/integration/test_markdown_export.py tests/unit/test_storage.py -v`
 Expected: FAIL because export and storage adapters do not exist.
 
-- [ ] **Step 5: 实现运行入口、兼容报告、本地对象存储和许可证记录**
+- [x] **Step 5: 实现运行入口、兼容报告、本地对象存储和许可证记录**
 
 `platform/README.md` 写明本地启动、数据迁移、工作流恢复、模型外发开启条件、备份和回退。根 `README.md` 增加企业平台入口但不复制设计全文。`platform/licenses.md` 记录直接依赖名称、版本、许可证和用途；发现 AGPL 依赖时阻止合入并替换。
 
@@ -1243,12 +1243,12 @@ def export_markdown(snapshot: DashboardSnapshot, destination: Path) -> Path:
 
 开发环境对象存储使用 `FilesystemObjectStore` 并限制在 `platform/.data/`；生产配置只接受企业批准的 S3 端点。`platform/.data/` 加入 `.gitignore`，不引入 MinIO 或其他 AGPL 服务。
 
-- [ ] **Step 6: 运行纵向链路、导出和对象存储测试**
+- [x] **Step 6: 运行纵向链路、导出和对象存储测试**
 
 Run: `cd platform/backend && uv run pytest tests/e2e/test_kettle_vertical_slice.py tests/integration/test_markdown_export.py tests/unit/test_storage.py -v`
 Expected: PASS; the vertical slice makes zero model calls and the export reconciles.
 
-- [ ] **Step 7: 运行完整自动验证**
+- [x] **Step 7: 运行完整自动验证**
 
 Run: `python3 -m unittest discover -s tests -v`
 Expected: existing 4 tests PASS.
@@ -1268,11 +1268,11 @@ Expected: exit 0.
 Run: `gitleaks detect --source . --redact --no-banner`
 Expected: no leaks found.
 
-- [ ] **Step 8: 进行最终视觉检查**
+- [x] **Step 8: 进行最终视觉检查**
 
 启动本地平台，分别截取 1440×900、390×844 和打印预览。人工检查：Top10 长标签不截断、条形图零起点、样本分母和三天限制可见、颜色不是唯一状态通道、证据抽屉可读、移动端无横向溢出。任何一项失败都先修正并重跑 Playwright。
 
-- [ ] **Step 9: 更新状态和变更记录**
+- [x] **Step 9: 更新状态和变更记录**
 
 `state/board.md` 只保留当前已完成、剩余和阻塞事项；`state/changelog.md` 记录平台从报告管线升级到企业机会闭环的原因和对使用者的影响。不得写入密钥、令牌或客户个人信息。
 
@@ -1281,7 +1281,7 @@ board 当前状态：企业纵向链路已验证；正式 SSO、生产 Kubernete
 changelog 里程碑：从报告生成管线升级为证据—审核—机会—行动—评测闭环。
 ```
 
-- [ ] **Step 10: 提交经验证的纵向链路**
+- [x] **Step 10: 提交经验证的纵向链路**
 
 ```bash
 git add README.md scripts/README.md platform state/board.md state/changelog.md

@@ -16,6 +16,7 @@ services:
       - "127.0.0.1:55432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
 
   cache:
     image: valkey/valkey:9.1.1-alpine
@@ -25,6 +26,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
+    restart: unless-stopped
 
   temporal:
     image: temporalio/auto-setup:1.29.7
@@ -41,6 +43,12 @@ services:
       TEMPORAL_CLI_ADDRESS: temporal:7233
     ports:
       - "127.0.0.1:7233:7233"
+    healthcheck:
+      test: ["CMD", "temporal", "operator", "cluster", "health", "--address", "temporal:7233"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
 
   temporal-ui:
     image: temporalio/ui:2.53.3
@@ -51,6 +59,7 @@ services:
       TEMPORAL_CORS_ORIGINS: http://localhost:4173
     ports:
       - "127.0.0.1:8233:8080"
+    restart: unless-stopped
 
   api:
     build:
@@ -59,8 +68,6 @@ services:
       migrate:
         condition: service_completed_successfully
       temporal:
-        condition: service_started
-      cache:
         condition: service_healthy
     environment:
       BEARVOICE_DATABASE_URL: ${BEARVOICE_DATABASE_URL}
@@ -79,6 +86,15 @@ services:
       - "127.0.0.1:8000:8000"
     volumes:
       - ./.data/objects:/var/lib/bearvoice/objects
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/ready', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
 
   migrate:
     build:
@@ -98,21 +114,36 @@ services:
       migrate:
         condition: service_completed_successfully
       temporal:
-        condition: service_started
+        condition: service_healthy
     environment:
       BEARVOICE_DATABASE_URL: ${BEARVOICE_DATABASE_URL}
       BEARVOICE_TEMPORAL_ADDRESS: ${BEARVOICE_TEMPORAL_ADDRESS}
       BEARVOICE_CACHE_URL: ${BEARVOICE_CACHE_URL}
       BEARVOICE_MODEL_EGRESS_ENABLED: ${BEARVOICE_MODEL_EGRESS_ENABLED}
+      BEARVOICE_RUNTIME_ENVIRONMENT: ${BEARVOICE_RUNTIME_ENVIRONMENT:-production}
+      BEARVOICE_STORAGE_BACKEND: ${BEARVOICE_STORAGE_BACKEND}
+      BEARVOICE_OBJECT_STORE_ROOT: ${BEARVOICE_OBJECT_STORE_ROOT}
+    init: true
+    security_opt:
+      - no-new-privileges:true
     restart: on-failure
 
   web:
     build:
       context: ./frontend
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     ports:
       - "127.0.0.1:4173:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/api/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
 
 volumes:
   postgres-data:

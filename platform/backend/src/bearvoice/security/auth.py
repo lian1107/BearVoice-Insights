@@ -1,6 +1,8 @@
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from functools import lru_cache
+from urllib.parse import urlparse
 
 import jwt
 from fastapi import Depends, HTTPException, Request, status
@@ -121,9 +123,7 @@ def _decode_token(token: str, settings: Settings) -> Mapping[str, object]:
             )
         ):
             raise _authentication_error()
-        signing_key = PyJWKClient(settings.oidc_jwks_url).get_signing_key_from_jwt(
-            token
-        )
+        signing_key = _jwk_client(settings.oidc_jwks_url).get_signing_key_from_jwt(token)
         return jwt.decode(
             token,
             signing_key.key,
@@ -135,6 +135,33 @@ def _decode_token(token: str, settings: Settings) -> Mapping[str, object]:
         raise
     except (PyJWTError, ValueError, TypeError) as error:
         raise _authentication_error() from error
+
+
+@lru_cache(maxsize=8)
+def _jwk_client(jwks_url: str) -> PyJWKClient:
+    return PyJWKClient(
+        jwks_url,
+        cache_keys=True,
+        lifespan=300,
+        timeout=5,
+    )
+
+
+def _assert_same_origin_local_write(request: Request) -> None:
+    if request.method in {"GET", "HEAD", "OPTIONS"}:
+        return
+    origin = request.headers.get("origin")
+    host = request.headers.get("host", "")
+    if not origin:
+        raise HTTPException(status_code=403, detail="本地开发写操作缺少来源校验")
+    origin_host = urlparse(origin).hostname
+    request_host = urlparse(f"//{host}").hostname
+    if origin_host not in {"localhost", "127.0.0.1", "::1"} or request_host not in {
+        "localhost",
+        "127.0.0.1",
+        "::1",
+    }:
+        raise HTTPException(status_code=403, detail="本地开发写操作来源无效")
 
 
 def get_principal(
@@ -157,6 +184,7 @@ def get_principal(
         if token and sessions is not None:
             claims = sessions.resolve(token)
             if claims is not None:
+                _assert_same_origin_local_write(request)
                 return Principal.from_claims(claims)
     raise _authentication_error()
 

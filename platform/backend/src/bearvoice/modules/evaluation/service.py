@@ -447,6 +447,9 @@ async def decide_release(
         )
         for active_release in active_releases:
             active_release.status = "superseded"
+        # Release the database-level single-active slot before inserting the
+        # replacement. PostgreSQL may otherwise flush the INSERT first.
+        await session.flush()
 
     release = ModelRelease(
         id=uuid.uuid4(),
@@ -509,6 +512,8 @@ async def rollback_release(
         raise ValueError("当前没有可回滚的活跃版本")
 
     current.status = "rolled_back"
+    # Release the partial unique-index slot before reactivating the target.
+    await session.flush()
     target.status = "active"
     target.approved_by = actor_id
     target.released_at = datetime.now(UTC)

@@ -29,7 +29,7 @@ def _assert_loopback_request(request: Request) -> None:
     if _hostname(request.headers.get("host", "")) not in LOOPBACK_HOSTS:
         raise HTTPException(status_code=403, detail="本地开发登录仅允许 localhost")
     origin = request.headers.get("origin")
-    if origin and _hostname(origin) not in LOOPBACK_HOSTS:
+    if not origin or _hostname(origin) not in LOOPBACK_HOSTS:
         raise HTTPException(status_code=403, detail="本地开发登录来源无效")
 
 
