@@ -17,12 +17,12 @@
 支持 .csv .txt .md .json .tsv（Excel 请先另存为 CSV——xlsx 里的格式和公式不该进真相源）。
 """
 import argparse
+import csv
 import hashlib
-import json
+import io
 import os
 import re
 import sys
-from datetime import datetime
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ENV_LOCAL = os.path.join(REPO, ".env.local")
@@ -99,10 +99,42 @@ def scrub(text, salt, stats, mapping):
     return text
 
 
-def process(path, out_dir, salt, check_only):
+def scrub_csv_columns(text, columns, salt, stats, mapping):
+    """只洗指定列，其余原样保留。
+
+    为什么必须有这个：商品id 是 12 位数字，会被「订单号」规则整片吃掉——
+    而它是分析要用的关联键，洗掉了数据就废了（2026-08-15 在赛题数据上实测命中 4295 处误报）。
+    结构字段（商品id / 原声id / 链接）留着，只洗客户真正写的那一列。
+    """
+    buf = io.StringIO(text)
+    reader = csv.reader(buf)
+    rows = list(reader)
+    if not rows:
+        return text
+    header = rows[0]
+    idx = [i for i, h in enumerate(header) if h.strip() in columns]
+    missing = columns - {h.strip() for h in header}
+    if missing:
+        print("      ⚠️ 表头里没有这些列，已跳过：%s" % "、".join(sorted(missing)))
+    if not idx:
+        return text
+    for row in rows[1:]:
+        for i in idx:
+            if i < len(row):
+                row[i] = scrub(row[i], salt, stats, mapping)
+    out = io.StringIO()
+    csv.writer(out, lineterminator="\n").writerows(rows)
+    return out.getvalue()
+
+
+def process(path, out_dir, salt, check_only, columns=None):
     text, enc = read_text(path)
     stats, mapping = {}, {}
-    cleaned = scrub(text, salt, stats, mapping)
+    is_csv = os.path.splitext(path)[1].lower() in (".csv", ".tsv")
+    if columns and is_csv:
+        cleaned = scrub_csv_columns(text, columns, salt, stats, mapping)
+    else:
+        cleaned = scrub(text, salt, stats, mapping)
     addr_hits = ADDR_HINT.findall(cleaned)
 
     name = os.path.basename(path)
@@ -147,7 +179,10 @@ def main():
     ap.add_argument("target", help="要脱敏的文件或目录")
     ap.add_argument("-o", "--out", help="输出目录，通常是 vault/raw/<YYYYMMDD-来源-类型>/")
     ap.add_argument("--check", action="store_true", help="只报告命中什么，不写文件")
+    ap.add_argument("--columns", help="CSV 只洗这几列（逗号分隔），如 --columns 原声内容。"
+                                      "不给就整篇洗——那会把商品id 之类的结构字段一起毁掉")
     args = ap.parse_args()
+    columns = set(c.strip() for c in args.columns.split(",")) if args.columns else None
 
     if not os.path.exists(args.target):
         print("找不到：%s" % args.target, file=sys.stderr)
@@ -166,7 +201,7 @@ def main():
     print("▸ 待处理 %d 个文件" % len(files))
     total_pii = total_addr = written = 0
     for p in files:
-        a, b, c = process(p, args.out, salt, args.check)
+        a, b, c = process(p, args.out, salt, args.check, columns)
         total_pii += a
         total_addr += b
         written += c
