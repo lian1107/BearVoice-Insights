@@ -69,6 +69,29 @@ export interface SourceSummary {
   quarantined_count: number;
 }
 
+export interface UploadAnalysisResult {
+  batch_id: string;
+  analysis_run_id: string;
+  raw_count: number;
+  deduplicated_count: number;
+  quarantined_count: number;
+  signal_count: number;
+  cluster_count: number;
+  opportunity_count: number;
+  status: "pending_review" | string;
+  reused: boolean;
+  analysis_mode: "offline_keyword_rules";
+  model_calls: number;
+  notice: string;
+}
+
+export interface UploadSourceCommand {
+  sourceName: string;
+  channel: string;
+  product: string;
+  productColumn: string;
+}
+
 export interface SystemStatus {
   oidc_configured: boolean;
   dev_auth_enabled: boolean;

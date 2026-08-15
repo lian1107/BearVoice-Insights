@@ -13,6 +13,8 @@ import type {
   SystemStatus,
   TaxonomyRevisionCommand,
   TaxonomySummary,
+  UploadAnalysisResult,
+  UploadSourceCommand,
 } from "./types";
 
 
@@ -92,6 +94,32 @@ export function getDashboard(
 
 export function getSources(): Promise<SourceSummary[]> {
   return getJson<SourceSummary[]>("/api/sources");
+}
+
+
+export async function uploadVoiceCsv(
+  file: File,
+  command: UploadSourceCommand,
+): Promise<UploadAnalysisResult> {
+  const body = new FormData();
+  body.append("file", file);
+  body.append("source_name", command.sourceName);
+  body.append("channel", command.channel);
+  body.append("product", command.product);
+  body.append("product_column", command.productColumn);
+  const response = await fetch(`${API_BASE_URL}/api/sources/upload`, {
+    method: "POST",
+    body,
+    credentials: "same-origin",
+  });
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new AuthenticationRequiredError();
+    }
+    const problem = await response.json().catch(() => null) as { detail?: string } | null;
+    throw new Error(problem?.detail ?? `上传失败（${response.status}）`);
+  }
+  return response.json() as Promise<UploadAnalysisResult>;
 }
 
 

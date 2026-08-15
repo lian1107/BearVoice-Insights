@@ -38,7 +38,7 @@ const routes: Array<{
 }> = [
   { key: "dashboard", label: "决策总览", group: "决策", permission: "read_voice", icon: LayoutDashboard },
   { key: "opportunities", label: "产品机会", group: "决策", permission: "review_opportunity", icon: Lightbulb },
-  { key: "sources", label: "数据资产", group: "数据", permission: "manage_sources", icon: Database },
+  { key: "sources", label: "数据接入", group: "数据", permission: "manage_sources", icon: Database },
   { key: "taxonomy", label: "主题治理", group: "数据", permission: "review_taxonomy", icon: Tags },
   { key: "evaluation", label: "质量评测", group: "治理", permission: "manage_evaluation", icon: BadgeCheck },
   { key: "system", label: "系统状态", group: "治理", permission: "admin", icon: ShieldCheck },

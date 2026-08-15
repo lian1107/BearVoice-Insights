@@ -50,9 +50,18 @@ class SourceAdapter(Protocol):
 
 
 class CsvVoiceAdapter:
-    def __init__(self, source_name: str, product_column: str) -> None:
+    def __init__(
+        self,
+        source_name: str,
+        product_column: str,
+        *,
+        channel: str = "天猫",
+        product_name: str | None = None,
+    ) -> None:
         self.source_name = source_name
         self.product_column = product_column
+        self.channel = channel
+        self.product_name = product_name
 
     def validate(self, rows: list[dict[str, str]]) -> None:
         required = {"原声id", "原声内容", self.product_column}
@@ -93,20 +102,39 @@ class CsvVoiceAdapter:
         file_path: Path,
     ) -> ImportResult:
         content = file_path.read_bytes()
+        return await self.import_bytes(
+            session,
+            content,
+            object_ref=file_path.name,
+        )
+
+    async def import_bytes(
+        self,
+        session: AsyncSession,
+        content: bytes,
+        *,
+        object_ref: str,
+    ) -> ImportResult:
         file_hash = hashlib.sha256(content).hexdigest()
-        text = content.decode("utf-8-sig")
-        raw_rows = [
-            row
-            for row in csv.DictReader(io.StringIO(text))
-            if (row.get("原声内容") or "").strip()
-        ]
+        try:
+            text = content.decode("utf-8-sig")
+        except UnicodeDecodeError as error:
+            raise ValueError("CSV 必须使用 UTF-8 编码") from error
+        try:
+            raw_rows = [
+                row
+                for row in csv.DictReader(io.StringIO(text))
+                if (row.get("原声内容") or "").strip()
+            ]
+        except csv.Error as error:
+            raise ValueError("CSV 内容无法解析，请检查分隔符和字段长度") from error
         self.validate(raw_rows)
         normalized = [self.normalize(row) for row in raw_rows]
         unique = self.dedupe(normalized)
         return await self.persist(
             session,
             unique,
-            file_path=file_path,
+            object_ref=object_ref,
             file_hash=file_hash,
             raw_count=len(raw_rows),
         )
@@ -116,7 +144,7 @@ class CsvVoiceAdapter:
         session: AsyncSession,
         rows: list[dict[str, str]],
         *,
-        file_path: Path,
+        object_ref: str,
         file_hash: str,
         raw_count: int,
     ) -> ImportResult:
@@ -128,7 +156,7 @@ class CsvVoiceAdapter:
                 id=uuid.uuid4(),
                 source_type="csv",
                 name=self.source_name,
-                channel="天猫",
+                channel=self.channel,
                 connection_status="verified",
                 authorization_scope={"mode": "local_file"},
             )
@@ -149,12 +177,38 @@ class CsvVoiceAdapter:
                 quarantined_count=existing.quarantined_count,
             )
 
+        external_ids = [
+            row.get("原声id")
+            or hashlib.sha256(row["_文本"].encode("utf-8")).hexdigest()
+            for row in rows
+        ]
+        existing_external_ids = set(
+            await session.scalars(
+                select(VoiceRecord.external_id).where(
+                    VoiceRecord.source_id == source.id,
+                    VoiceRecord.external_id.in_(external_ids),
+                )
+            )
+        )
+        new_rows = [
+            row
+            for row, external_id in zip(rows, external_ids, strict=True)
+            if external_id not in existing_external_ids
+        ]
+
+        occurred_values = [
+            parsed
+            for row in new_rows
+            if (parsed := _parse_source_datetime(row.get("原声日期"))) is not None
+        ]
         batch = IngestionBatch(
             id=uuid.uuid4(),
             source_id=source.id,
             file_hash=file_hash,
+            period_start=min(occurred_values, default=None),
+            period_end=max(occurred_values, default=None),
             raw_count=raw_count,
-            deduplicated_count=len(rows),
+            deduplicated_count=len(new_rows),
             quarantined_count=0,
             status="imported",
         )
@@ -162,7 +216,7 @@ class CsvVoiceAdapter:
 
         records: list[VoiceRecord] = []
         findings: list[PrivacyFinding] = []
-        for row in rows:
+        for row in new_rows:
             privacy = self.privacy_gate(row["_文本"])
             record_id = uuid.uuid4()
             record = VoiceRecord(
@@ -171,11 +225,11 @@ class CsvVoiceAdapter:
                 ingestion_batch_id=batch.id,
                 external_id=row.get("原声id")
                 or hashlib.sha256(row["_文本"].encode("utf-8")).hexdigest(),
-                product=row.get(self.product_column) or "未识别",
+                product=self.product_name or row.get(self.product_column) or "未识别",
                 sku=row.get("商品id") or None,
-                channel=row.get("渠道") or "未知",
+                channel=row.get("渠道") or self.channel,
                 occurred_at=_parse_source_datetime(row.get("原声日期")),
-                raw_object_ref=file_path.name,
+                raw_object_ref=object_ref,
                 normalized_text=privacy.text,
                 content_hash=hashlib.sha256(
                     row["_文本"].encode("utf-8")

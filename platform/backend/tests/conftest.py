@@ -46,10 +46,11 @@ async def db_session():
 
 
 @pytest.fixture
-def api_settings() -> Settings:
+def api_settings(tmp_path: Path) -> Settings:
     return Settings(
         dev_auth_enabled=True,
         dev_auth_signing_key=DEV_AUTH_KEY,
+        object_store_root=str(tmp_path / "objects"),
     )
 
 
@@ -84,5 +85,15 @@ def reviewer_token(api_settings: Settings) -> str:
         api_settings,
         subject="reviewer-1",
         roles=("quality_reviewer",),
+        product_lines=("养生壶",),
+    )
+
+
+@pytest.fixture
+def admin_token(api_settings: Settings) -> str:
+    return issue_dev_token(
+        api_settings,
+        subject="admin-1",
+        roles=("admin",),
         product_lines=("养生壶",),
     )

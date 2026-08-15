@@ -3,6 +3,15 @@ set -euo pipefail
 
 PLATFORM_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPO_DIR="$(cd "$PLATFORM_DIR/.." && pwd)"
+DATA_REPO_DIR="$REPO_DIR"
+
+COMMON_GIT_DIR="$(git -C "$REPO_DIR" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)"
+if [ -n "$COMMON_GIT_DIR" ]; then
+  COMMON_REPO_DIR="$(cd "$COMMON_GIT_DIR/.." && pwd)"
+  if [ -d "$COMMON_REPO_DIR/_build/analyze" ]; then
+    DATA_REPO_DIR="$COMMON_REPO_DIR"
+  fi
+fi
 
 cd "$PLATFORM_DIR"
 docker-compose --env-file .env.example up -d --build \
@@ -21,7 +30,7 @@ done
 
 cd "$PLATFORM_DIR/backend"
 BEARVOICE_DATABASE_URL="postgresql+asyncpg://bearvoice:local-only-change-me@127.0.0.1:55432/bearvoice" \
-  uv run python -m bearvoice.cli import-legacy --repo-root "$REPO_DIR"
+  uv run python -m bearvoice.cli import-legacy --repo-root "$DATA_REPO_DIR"
 
 cd "$PLATFORM_DIR/frontend"
 bun run test:e2e:compose

@@ -113,10 +113,14 @@ async def get_dashboard_snapshot(
     product: str,
 ) -> DashboardSnapshot:
     run_id = await _latest_analysis_run_id(session, product)
+    run_voice_ids = select(Signal.voice_record_id).where(
+        Signal.analysis_run_id == run_id
+    )
     total_voices = int(
         await session.scalar(
             select(func.count(distinct(VoiceRecord.id))).where(
-                VoiceRecord.product == product
+                VoiceRecord.product == product,
+                VoiceRecord.id.in_(run_voice_ids),
             )
         )
         or 0
@@ -205,11 +209,15 @@ async def get_dashboard_snapshot(
                     "evidence_count"
                 ),
             )
-            .outerjoin(
+            .join(
                 OpportunityEvidence,
                 OpportunityEvidence.opportunity_id == Opportunity.id,
             )
-            .where(Opportunity.product == product)
+            .join(Signal, Signal.id == OpportunityEvidence.signal_id)
+            .where(
+                Opportunity.product == product,
+                Signal.analysis_run_id == run_id,
+            )
             .group_by(Opportunity.id)
             .order_by(
                 Opportunity.priority_override.desc().nullslast(),
@@ -246,7 +254,10 @@ async def get_dashboard_snapshot(
                     )
                 ),
                 func.string_agg(distinct(VoiceRecord.channel), ","),
-            ).where(VoiceRecord.product == product)
+            ).where(
+                VoiceRecord.product == product,
+                VoiceRecord.id.in_(run_voice_ids),
+            )
         )
     ).one()
     period_start, period_end, channels = coverage_row

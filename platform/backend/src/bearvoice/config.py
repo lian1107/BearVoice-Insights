@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     dev_auth_signing_key: str | None = None
     local_dev_session_enabled: bool = False
     local_dev_session_ttl_seconds: int = Field(default=3600, ge=60, le=86_400)
+    max_upload_bytes: int = Field(default=10_485_760, ge=1_024, le=52_428_800)
     data_retention_days: int = Field(default=365, ge=1)
     storage_backend: Literal["filesystem", "s3"] = "filesystem"
     object_store_root: str = "../.data/objects"
