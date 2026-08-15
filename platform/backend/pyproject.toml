@@ -1,0 +1,30 @@
+[project]
+name = "bearvoice"
+version = "0.1.0"
+description = "小熊电器内部客户原声产品机会平台"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "fastapi",
+  "pydantic-settings",
+  "uvicorn[standard]",
+]
+
+[dependency-groups]
+dev = [
+  "httpx",
+  "httpx2>=2.10.0",
+  "pytest",
+  "pytest-asyncio",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/bearvoice"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+asyncio_mode = "auto"

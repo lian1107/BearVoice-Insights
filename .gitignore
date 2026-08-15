@@ -50,3 +50,6 @@ __pycache__/
 *.pyc
 node_modules/
 .venv/
+.pytest_cache/
+platform/.data/
+platform/frontend/dist/
