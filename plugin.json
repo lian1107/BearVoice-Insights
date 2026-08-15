@@ -1,0 +1,8 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "xbd",
+  "version": "0.1.0",
+  "description": "小熊电器客户原声分析与产品改进挖掘",
+  "license": "MIT",
+  "keywords": ["aias"]
+}
