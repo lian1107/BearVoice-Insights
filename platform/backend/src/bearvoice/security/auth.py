@@ -40,6 +40,7 @@ ROLE_PERMISSIONS: Mapping[str, frozenset[Permission]] = {
         {
             Permission.READ_VOICE,
             Permission.MANAGE_SOURCES,
+            Permission.RUN_ANALYSIS,
         }
     ),
     "management": frozenset(

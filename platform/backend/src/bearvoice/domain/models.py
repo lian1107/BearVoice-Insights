@@ -1,5 +1,6 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
+from decimal import Decimal
 from typing import Any
 
 from pgvector.sqlalchemy import Vector
@@ -7,11 +8,13 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     CheckConstraint,
+    Date,
     DateTime,
     Float,
     ForeignKey,
     Index,
     Integer,
+    Numeric,
     String,
     Text,
     UniqueConstraint,
@@ -22,7 +25,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from bearvoice.db import Base
-from bearvoice.domain.enums import OpportunityStatus
+from bearvoice.domain.enums import ActionItemStatus, OpportunityStatus
 
 
 class IdTimestampMixin:
@@ -158,6 +161,83 @@ class AnalysisRun(IdTimestampMixin, Base):
     error_message: Mapped[str | None] = mapped_column(Text)
 
 
+class ModelAnalysisJob(IdTimestampMixin, Base):
+    __tablename__ = "model_analysis_jobs"
+    __table_args__ = (
+        UniqueConstraint("idempotency_key", name="uq_model_job_idempotency_key"),
+    )
+
+    ingestion_batch_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("ingestion_batches.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    analysis_run_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("analysis_runs.id", ondelete="SET NULL"), index=True
+    )
+    idempotency_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    workflow_id: Mapped[str] = mapped_column(String(200), nullable=False, unique=True)
+    product: Mapped[str] = mapped_column(String(120), nullable=False, index=True)
+    provider: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    requested_by: Mapped[str] = mapped_column(String(200), nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="queued", index=True
+    )
+    requested_items: Mapped[int] = mapped_column(Integer, nullable=False)
+    processed_items: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    model_calls: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    signal_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    cluster_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    opportunity_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    attempt_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    reserved_cost_amount: Mapped[Decimal] = mapped_column(
+        Numeric(14, 4), nullable=False
+    )
+    input_tokens: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
+    output_tokens: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
+    error_code: Mapped[str | None] = mapped_column(String(100))
+    error_message: Mapped[str | None] = mapped_column(Text)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class ModelBudgetCounter(IdTimestampMixin, Base):
+    __tablename__ = "model_budget_counters"
+    __table_args__ = (
+        UniqueConstraint(
+            "budget_date", "provider", name="uq_model_budget_date_provider"
+        ),
+    )
+
+    budget_date: Mapped[date] = mapped_column(Date, nullable=False)
+    provider: Mapped[str] = mapped_column(String(50), nullable=False)
+    reserved_calls: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    reserved_cost_amount: Mapped[Decimal] = mapped_column(
+        Numeric(14, 4), nullable=False, default=Decimal("0")
+    )
+
+
+class SemanticVoiceCache(IdTimestampMixin, Base):
+    __tablename__ = "semantic_voice_cache"
+    __table_args__ = (
+        UniqueConstraint("cache_key", name="uq_semantic_voice_cache_key"),
+    )
+
+    cache_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    voice_record_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("voice_records.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    provider: Mapped[str] = mapped_column(String(50), nullable=False)
+    model_version: Mapped[str] = mapped_column(String(200), nullable=False)
+    prompt_version: Mapped[str] = mapped_column(String(200), nullable=False)
+    content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    result_payload: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    input_tokens: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
+    output_tokens: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
+
+
 class Signal(IdTimestampMixin, Base):
     __tablename__ = "signals"
     __table_args__ = (
@@ -177,11 +257,32 @@ class Signal(IdTimestampMixin, Base):
     )
     signal_index: Mapped[int] = mapped_column(Integer, nullable=False)
     signal_type: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    lifecycle_stage: Mapped[str] = mapped_column(
+        String(50), nullable=False, default="unknown"
+    )
     object_name: Mapped[str | None] = mapped_column(String(200))
+    issue: Mapped[str | None] = mapped_column(Text)
+    latent_need: Mapped[str | None] = mapped_column(Text)
+    scenario: Mapped[str | None] = mapped_column(Text)
     evidence_text: Mapped[str] = mapped_column(Text, nullable=False)
     confidence: Mapped[float | None] = mapped_column(Float)
     calibration_status: Mapped[str] = mapped_column(
         String(32), nullable=False, default="uncalibrated"
+    )
+    risk_level: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="unknown"
+    )
+    root_cause_hypotheses: Mapped[list[str]] = mapped_column(
+        JSONB, nullable=False, default=list
+    )
+    missing_information: Mapped[list[str]] = mapped_column(
+        JSONB, nullable=False, default=list
+    )
+    improvement_directions: Mapped[list[str]] = mapped_column(
+        JSONB, nullable=False, default=list
+    )
+    validation_suggestions: Mapped[list[str]] = mapped_column(
+        JSONB, nullable=False, default=list
     )
     is_outlier: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
@@ -362,7 +463,9 @@ class ActionItem(IdTimestampMixin, Base):
     )
     objective: Mapped[str] = mapped_column(Text, nullable=False)
     due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    status: Mapped[str] = mapped_column(String(32), nullable=False, default="planned")
+    status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default=ActionItemStatus.PLANNED.value
+    )
     external_system_ref: Mapped[str | None] = mapped_column(String(1024))
     decision_rationale: Mapped[str] = mapped_column(Text, nullable=False)
 
@@ -374,12 +477,20 @@ class OutcomeMeasurement(IdTimestampMixin, Base):
         ForeignKey("action_items.id", ondelete="CASCADE"), nullable=False
     )
     metric_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    metric_definition: Mapped[str] = mapped_column(
+        Text, nullable=False, default="TBD"
+    )
+    unit: Mapped[str] = mapped_column(String(80), nullable=False, default="TBD")
     baseline_value: Mapped[float | None] = mapped_column(Float)
     target_value: Mapped[float | None] = mapped_column(Float)
     actual_value: Mapped[float | None] = mapped_column(Float)
+    observation_window: Mapped[str] = mapped_column(
+        String(200), nullable=False, default="TBD"
+    )
     measured_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     conclusion: Mapped[str | None] = mapped_column(Text)
     limitations: Mapped[str | None] = mapped_column(Text)
+    recorded_by: Mapped[str] = mapped_column(String(200), nullable=False)
 
 
 class GoldenExample(IdTimestampMixin, Base):

@@ -42,6 +42,6 @@ test("local developer explicitly starts a secure session before seeing the works
   const heading = await screen.findByRole("heading", { name: "产品机会决策平台" });
 
   expect(heading.hasAttribute("hidden")).toBe(false);
-  expect(screen.getByText("模型外发默认关闭").hasAttribute("hidden")).toBe(false);
+  expect(screen.getByText("模型外发受白名单与脱敏门禁控制").hasAttribute("hidden")).toBe(false);
   globalThis.fetch = originalFetch;
 });

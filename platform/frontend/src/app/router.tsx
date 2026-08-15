@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   BadgeCheck,
+  ChartNoAxesCombined,
   Database,
   LayoutDashboard,
   Lightbulb,
@@ -13,6 +14,7 @@ import {
 
 import { DashboardPage } from "../pages/DashboardPage";
 import { EvaluationPage } from "../pages/EvaluationPage";
+import { InsightsPage } from "../pages/InsightsPage";
 import { OpportunityPage } from "../pages/OpportunityPage";
 import { SourcesPage } from "../pages/SourcesPage";
 import { SystemPage } from "../pages/SystemPage";
@@ -27,7 +29,7 @@ export type UiPermission =
   | "manage_evaluation"
   | "admin";
 
-type RouteKey = "dashboard" | "sources" | "taxonomy" | "opportunities" | "evaluation" | "system";
+type RouteKey = "dashboard" | "insights" | "sources" | "taxonomy" | "opportunities" | "evaluation" | "system";
 
 const routes: Array<{
   key: RouteKey;
@@ -37,6 +39,7 @@ const routes: Array<{
   icon: LucideIcon;
 }> = [
   { key: "dashboard", label: "决策总览", group: "决策", permission: "read_voice", icon: LayoutDashboard },
+  { key: "insights", label: "产品决策洞察", group: "决策", permission: "read_voice", icon: ChartNoAxesCombined },
   { key: "opportunities", label: "产品机会", group: "决策", permission: "review_opportunity", icon: Lightbulb },
   { key: "sources", label: "数据接入", group: "数据", permission: "manage_sources", icon: Database },
   { key: "taxonomy", label: "主题治理", group: "数据", permission: "review_taxonomy", icon: Tags },
@@ -61,7 +64,7 @@ export function EnterpriseRouter({ permissions }: { permissions: UiPermission[] 
   const [selectedOpportunityId, setSelectedOpportunityId] = useState<string>();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const routeGroups = ["决策", "数据", "治理"] as const;
-  const primaryMobileRoutes = visibleRoutes.filter((route) => ["dashboard", "opportunities", "sources", "taxonomy"].includes(route.key));
+  const primaryMobileRoutes = visibleRoutes.filter((route) => ["dashboard", "insights", "opportunities", "sources"].includes(route.key));
   const secondaryMobileRoutes = visibleRoutes.filter((route) => !primaryMobileRoutes.includes(route));
 
   function navigate(key: RouteKey) {
@@ -80,6 +83,8 @@ export function EnterpriseRouter({ permissions }: { permissions: UiPermission[] 
       )
     : active === "sources"
       ? <SourcesPage />
+      : active === "insights"
+        ? <InsightsPage />
       : active === "taxonomy"
         ? <TaxonomyPage />
         : active === "opportunities"
@@ -115,7 +120,7 @@ export function EnterpriseRouter({ permissions }: { permissions: UiPermission[] 
         <div className="sidebar__footer"><span className="status-dot" />私有化环境</div>
       </aside>
       <div className="workspace">
-        <header className="topbar"><strong aria-label="产品机会决策平台" aria-level={1} role="heading">{routes.find((route) => route.key === active)?.label}</strong><span role="status"><ShieldCheck aria-hidden="true" size={14} />模型外发默认关闭</span></header>
+        <header className="topbar"><strong aria-label="产品机会决策平台" aria-level={1} role="heading">{routes.find((route) => route.key === active)?.label}</strong><span role="status"><ShieldCheck aria-hidden="true" size={14} />模型外发受白名单与脱敏门禁控制</span></header>
         <main className="content">{content}</main>
       </div>
       {mobileMenuOpen ? (

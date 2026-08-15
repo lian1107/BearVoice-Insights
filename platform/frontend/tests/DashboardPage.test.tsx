@@ -17,7 +17,7 @@ const fixture: DashboardSnapshot = {
     { signal_type: "缺陷", count: 61, percentage: 16.5, denominator: 370 },
     { signal_type: "认知", count: 57, percentage: 15.4, denominator: 370 },
   ],
-  top_clusters: Array.from({ length: 10 }, (_, index) => ({
+  top_clusters: Array.from({ length: 12 }, (_, index) => ({
     id: `cluster-${index}`,
     name: index === 0 ? "容量与尺寸预期" : `聚类 ${index + 1}`,
     signal_type: index === 0 ? "预期" : "咨询",

@@ -62,7 +62,7 @@ fi
 echo ""
 echo "BearVoice 已就绪："
 echo "  产品界面  http://localhost:4173"
-echo "  API 文档  http://localhost:8000/docs"
+echo "  API 文档  http://localhost:8000/api/docs"
 echo "  工作流    http://localhost:8233"
 echo ""
 echo "打开产品界面，点击“进入本地开发环境”；数据接入与分析入口可直接上传 UTF-8 CSV。"

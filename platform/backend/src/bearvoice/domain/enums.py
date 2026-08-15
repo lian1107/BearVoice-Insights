@@ -39,6 +39,24 @@ class OpportunityStatus(StrEnum):
         return target in transitions[self]
 
 
+class ActionItemStatus(StrEnum):
+    PLANNED = "planned"
+    IN_PROGRESS = "in_progress"
+    BLOCKED = "blocked"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
+
+    def can_transition_to(self, target: "ActionItemStatus") -> bool:
+        transitions = {
+            self.PLANNED: {self.IN_PROGRESS, self.COMPLETED, self.CANCELLED},
+            self.IN_PROGRESS: {self.BLOCKED, self.COMPLETED, self.CANCELLED},
+            self.BLOCKED: {self.IN_PROGRESS, self.CANCELLED},
+            self.COMPLETED: set(),
+            self.CANCELLED: set(),
+        }
+        return target in transitions[self]
+
+
 class ReviewDecisionType(StrEnum):
     APPROVE = "approve"
     REJECT = "reject"

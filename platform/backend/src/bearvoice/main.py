@@ -8,6 +8,7 @@ from sqlalchemy import text
 from bearvoice.api.router import api_router
 from bearvoice.config import Settings
 from bearvoice.db import create_database_engine, create_session_factory
+from bearvoice.modules.analysis.dispatch import TemporalSemanticJobDispatcher
 from bearvoice.security.local_session import LocalDevSessionStore
 
 
@@ -33,6 +34,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.local_dev_sessions = LocalDevSessionStore()
     app.state.db_engine = database_engine
     app.state.db_session_factory = create_session_factory(database_engine)
+    app.state.semantic_job_dispatcher = TemporalSemanticJobDispatcher(active)
     app.include_router(api_router)
 
     @app.middleware("http")

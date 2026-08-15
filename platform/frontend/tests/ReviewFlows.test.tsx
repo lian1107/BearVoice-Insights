@@ -2,10 +2,12 @@ import { expect, test } from "bun:test";
 import { fireEvent, render, screen } from "@testing-library/react";
 
 import type {
+  ActionItem,
   AuditEntry,
   EvidenceDetail,
   GoldenReviewItem,
   OpportunityDetail,
+  OutcomeMeasurement,
   TaxonomySummary,
 } from "../src/api/types";
 import { EvaluationPage } from "../src/pages/EvaluationPage";
@@ -41,6 +43,18 @@ const evidence: EvidenceDetail = {
   object_name: "玻璃壶体",
   privacy_status: "passed",
   direction: "support",
+};
+
+const action: ActionItem = {
+  id: "action-1",
+  owner: "quality-owner",
+  collaborating_departments: ["研发", "客服"],
+  objective: "验证新壶体方案是否降低破裂反馈",
+  due_at: "2026-09-15T00:00:00Z",
+  status: "planned",
+  external_reference: "QA-2026-002",
+  decision_rationale: "安全证据达到门槛",
+  outcomes: [],
 };
 
 
@@ -79,6 +93,67 @@ test("reviewer can inspect evidence before accepting an opportunity", async () =
 
   expect(await screen.findByText("reviewer@example.com")).toBeTruthy();
   expect(submitted).toEqual(["涉及人身安全，转品控复核"]);
+});
+
+
+test("owner can move an action and record a human outcome with causal limits", async () => {
+  const commands: string[] = [];
+  const accepted: OpportunityDetail = {
+    ...opportunity,
+    status: "accepted",
+    actions: [action],
+  };
+  const measurement: OutcomeMeasurement = {
+    id: "outcome-1",
+    metric_name: "每千订单破裂反馈数",
+    metric_definition: "有效破裂反馈数 / 支付订单数 * 1000",
+    unit: "条/千订单",
+    baseline_value: 4.2,
+    target_value: 2,
+    actual_value: 2.8,
+    observation_window: "2026-09-01 至 2026-09-14",
+    measured_at: "2026-09-15T09:00:00Z",
+    conclusion: "指标下降，继续扩大样本",
+    limitations: "订单结构同期变化",
+    recorded_by: "reviewer-1",
+    causality_notice: "该结果由人工录入，只记录同期变化，不能证明因果。",
+  };
+  render(
+    <OpportunityPage
+      createOutcome={async (_opportunityId, _actionId, command) => {
+        commands.push(command.metric_definition);
+        return measurement;
+      }}
+      loadOpportunity={async () => accepted}
+      opportunityId="glass-crack"
+      transitionAction={async (_opportunityId, _actionId, command) => ({
+        ...action,
+        status: command.target_status,
+      })}
+    />,
+  );
+
+  expect(await screen.findByText("quality-owner")).toBeTruthy();
+  expect(screen.getByText("研发、客服")).toBeTruthy();
+  expect(screen.getByText("QA-2026-002")).toBeTruthy();
+  fireEvent.change(screen.getByLabelText(`行动 ${action.objective} 状态变化理由`), {
+    target: { value: "样机测试已启动" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "更新状态" }));
+  expect(await screen.findByText("进行中")).toBeTruthy();
+
+  fireEvent.click(screen.getByRole("button", { name: "新增指标" }));
+  expect(screen.getAllByText(/不能证明因果/).length).toBeGreaterThan(0);
+  fireEvent.change(screen.getByLabelText("指标名称"), { target: { value: measurement.metric_name } });
+  fireEvent.change(screen.getByLabelText("指标定义"), { target: { value: measurement.metric_definition } });
+  fireEvent.change(screen.getByLabelText("指标单位"), { target: { value: measurement.unit } });
+  fireEvent.change(screen.getByLabelText("观察窗口"), { target: { value: measurement.observation_window } });
+  fireEvent.change(screen.getByLabelText("人工结果结论"), { target: { value: measurement.conclusion } });
+  fireEvent.change(screen.getByLabelText("结果限制"), { target: { value: measurement.limitations } });
+  fireEvent.click(screen.getByRole("button", { name: "保存人工结果" }));
+
+  expect(await screen.findByText("指标下降，继续扩大样本")).toBeTruthy();
+  expect(commands).toEqual([measurement.metric_definition]);
 });
 
 

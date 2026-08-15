@@ -29,3 +29,16 @@ def test_product_manager_has_role_permissions_but_not_global_scope():
     assert permission_error.value.status_code == 403
     assert scope_error.value.status_code == 403
     assert scope_error.value.detail == "无权访问该产品线"
+
+
+def test_source_admin_can_manage_sources_and_run_analysis():
+    principal = Principal.from_claims(
+        {
+            "sub": "source-operator-1",
+            "roles": ["source_admin"],
+            "product_lines": ["养生壶"],
+        }
+    )
+
+    assert_permission(principal, Permission.MANAGE_SOURCES)
+    assert_permission(principal, Permission.RUN_ANALYSIS)
