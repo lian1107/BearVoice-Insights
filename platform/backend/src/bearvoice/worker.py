@@ -5,7 +5,11 @@ from temporalio.worker import Worker
 
 from bearvoice.config import Settings
 from bearvoice.modules.analysis.activities import execute_analysis_phase
-from bearvoice.modules.analysis.workflow import AnalysisWorkflow
+from bearvoice.modules.analysis.semantic_jobs import (
+    execute_model_analysis_job_activity,
+    mark_model_analysis_job_failed_activity,
+)
+from bearvoice.modules.analysis.workflow import AnalysisWorkflow, SemanticBatchWorkflow
 
 
 async def run_worker() -> None:
@@ -14,8 +18,12 @@ async def run_worker() -> None:
     worker = Worker(
         client,
         task_queue="bearvoice-analysis",
-        workflows=[AnalysisWorkflow],
-        activities=[execute_analysis_phase],
+        workflows=[AnalysisWorkflow, SemanticBatchWorkflow],
+        activities=[
+            execute_analysis_phase,
+            execute_model_analysis_job_activity,
+            mark_model_analysis_job_failed_activity,
+        ],
     )
     await worker.run()
 

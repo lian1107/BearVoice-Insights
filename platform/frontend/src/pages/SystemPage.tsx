@@ -21,8 +21,8 @@ export function SystemPage() {
           <div><dt>开发身份回退</dt><dd>{status.dev_auth_enabled ? "已开启" : "已关闭"}</dd></div>
           <div><dt>本地开发会话</dt><dd>{status.local_dev_session_enabled ? "仅本机开启" : "已关闭"}</dd></div>
           <div><dt>模型外发</dt><dd>{status.model_egress_enabled ? "已开启" : "默认关闭"}</dd></div>
-          <div><dt>获批提供商</dt><dd>{status.approved_model_providers.length || "无"}</dd></div>
-          <div><dt>获批用途</dt><dd>{status.approved_model_purposes.length || "无"}</dd></div>
+          <div><dt>获批提供商</dt><dd>{status.approved_model_providers.join("、") || "无"}</dd></div>
+          <div><dt>获批用途</dt><dd>{status.approved_model_purposes.join("、") || "无"}</dd></div>
           <div><dt>数据保留</dt><dd>{status.data_retention_days} 天</dd></div>
         </dl>
       ) : <div role="status" className="state-panel">正在读取安全状态…</div>}

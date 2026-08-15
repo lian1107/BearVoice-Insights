@@ -1,8 +1,10 @@
 from dataclasses import dataclass
 from datetime import timedelta
+from typing import Any
 
 from temporalio import workflow
 from temporalio.common import RetryPolicy
+from temporalio.exceptions import ActivityError
 
 
 @dataclass(frozen=True)
@@ -112,3 +114,30 @@ class AnalysisWorkflow:
             approved_by=self.approved_by or "",
             completed_phases=tuple(self.completed_phases),
         )
+
+
+@workflow.defn
+class SemanticBatchWorkflow:
+    @workflow.run
+    async def run(self, job_id: str) -> dict[str, Any]:
+        try:
+            return await workflow.execute_activity(
+                "execute_model_analysis_job",
+                job_id,
+                start_to_close_timeout=timedelta(hours=2),
+                heartbeat_timeout=timedelta(minutes=5),
+                retry_policy=RetryPolicy(
+                    initial_interval=timedelta(seconds=2),
+                    backoff_coefficient=2,
+                    maximum_interval=timedelta(minutes=1),
+                    maximum_attempts=3,
+                ),
+            )
+        except ActivityError as error:
+            await workflow.execute_activity(
+                "mark_model_analysis_job_failed",
+                {"job_id": job_id, "message": str(error)},
+                start_to_close_timeout=timedelta(minutes=1),
+                retry_policy=RetryPolicy(maximum_attempts=3),
+            )
+            return {"job_id": job_id, "status": "failed"}

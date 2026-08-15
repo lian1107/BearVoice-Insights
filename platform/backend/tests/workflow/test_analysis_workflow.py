@@ -7,6 +7,7 @@ from bearvoice.modules.analysis.workflow import (
     AnalysisWorkflow,
     AnalysisWorkflowInput,
     PhaseActivityInput,
+    SemanticBatchWorkflow,
 )
 from temporalio import activity
 from temporalio.client import WorkflowHandle
@@ -72,3 +73,38 @@ async def test_workflow_retries_activity_and_waits_for_human_approval():
     assert result.approved_by == "reviewer-1"
     assert attempts["extract"] == 2
     assert idempotency_keys.count("run-1:extract:sha256:fixture") == 2
+
+
+@pytest.mark.asyncio
+async def test_semantic_batch_workflow_retries_transient_worker_failure():
+    attempts = 0
+
+    @activity.defn(name="execute_model_analysis_job")
+    async def execute_job(job_id: str):
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            raise ApplicationError("temporary worker failure")
+        return {"job_id": job_id, "status": "succeeded"}
+
+    @activity.defn(name="mark_model_analysis_job_failed")
+    async def mark_failed(_payload: dict[str, str]):
+        raise AssertionError("成功重试时不应标记失败")
+
+    async with await WorkflowEnvironment.start_time_skipping() as environment:
+        task_queue = "semantic-batch-test"
+        async with Worker(
+            environment.client,
+            task_queue=task_queue,
+            workflows=[SemanticBatchWorkflow],
+            activities=[execute_job, mark_failed],
+        ):
+            result = await environment.client.execute_workflow(
+                SemanticBatchWorkflow.run,
+                "job-1",
+                id="semantic-job-1",
+                task_queue=task_queue,
+            )
+
+    assert result == {"job_id": "job-1", "status": "succeeded"}
+    assert attempts == 2

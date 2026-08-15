@@ -63,7 +63,9 @@ export function DashboardPage({
       return leftPriority - rightPriority || right.evidence_count - left.evidence_count;
     })[0];
   const normalizedQuery = query.trim().toLowerCase();
-  const visibleClusters = dashboard.top_clusters.filter((item) => item.name.toLowerCase().includes(normalizedQuery));
+  const visibleClusters = dashboard.top_clusters
+    .filter((item) => item.name.toLowerCase().includes(normalizedQuery))
+    .slice(0, 10);
   const visibleOpportunities = dashboard.opportunities.filter((item) => item.title.toLowerCase().includes(normalizedQuery));
   return (
     <div className="dashboard-page">

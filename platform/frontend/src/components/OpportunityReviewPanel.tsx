@@ -33,6 +33,8 @@ export function OpportunityReviewPanel({
 }) {
   const [reason, setReason] = useState("");
   const [owner, setOwner] = useState("");
+  const [departments, setDepartments] = useState("");
+  const [objective, setObjective] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [externalReference, setExternalReference] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -47,6 +49,8 @@ export function OpportunityReviewPanel({
         decision,
         reason: reason.trim(),
         owner: owner.trim() || undefined,
+        collaborating_departments: departments.split(/[，,]/).map((item) => item.trim()).filter(Boolean),
+        objective: objective.trim() || undefined,
         due_date: dueDate || undefined,
         external_reference: externalReference.trim() || undefined,
       });
@@ -80,8 +84,10 @@ export function OpportunityReviewPanel({
       </label>
       <div className="form-grid">
         <label className="field"><span>负责人（接受后）</span><input value={owner} onChange={(event) => setOwner(event.target.value)} /></label>
+        <label className="field"><span>协作部门</span><input aria-label="审核协作部门" placeholder="研发，品质，客服" value={departments} onChange={(event) => setDepartments(event.target.value)} /></label>
         <label className="field"><span>计划日期</span><input type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} /></label>
         <label className="field"><span>外部任务编号</span><input value={externalReference} onChange={(event) => setExternalReference(event.target.value)} /></label>
+        <label className="field field--wide"><span>行动目标（接受后）</span><input aria-label="审核行动目标" placeholder="未填写时使用机会标题" value={objective} onChange={(event) => setObjective(event.target.value)} /></label>
       </div>
       {error ? <p className="form-error" role="alert">{error}</p> : null}
       <div className="review-actions">

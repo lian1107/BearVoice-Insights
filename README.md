@@ -1,63 +1,90 @@
-# 小熊电器客户原声分析与产品改进挖掘
+# BearVoice Insights｜客户原声驱动的产品机会决策平台
 
-> 这是一个 **AI 自主系统**：你定方向与标准，它把活干完。
-> 作品在 `reports/`，开仓于 2026-08-15。
->
-> **这个系统朝哪儿使劲** —— 见 `.42cog/intent.md` 最上面那一句。
-> 那句话只有一份，改它不必回来改这里。
+BearVoice 把分散的客服原声转成可追溯、可审核、可执行的产品改进决策。系统不是只生成一份分析报告，而是贯通数据接入、清洗去重、AI 多信号抽取、风险优先洞察、产品机会审核、行动分派和效果复盘。
 
-## 从这里开始
+> 路演评审建议先读：[官方评审指南](docs/ROADSHOW.md) → [平台启动与部署](platform/README.md) → [产品决策工作流](platform/docs/operations/product-decision-insight-workflow.md)。
 
-**第一件事，也是唯一要你亲自过目的一件事**：
+## 为什么有商业价值
 
-打开 `.42cog/intent.md`，看最上面那一句「收敛方向」。**觉得不对就改。** 其余都是草稿，看不顺眼再动。
+- **安全问题不会被低声量淹没**：critical/high 风险先进入人工复核，不用声量单独决定优先级。
+- **洞察能回到证据**：信号、聚类、机会和行动均可追溯到脱敏原声与分析运行版本。
+- **AI 不替企业越权决策**：根因、改进方向和 ROI 均有明确边界，立项、召回和收益承诺必须由具名负责人审批。
+- **从发现问题走到改善闭环**：机会可以创建负责人、协作人、目标、截止时间和结果指标，人工记录效果与局限。
+- **可私有化部署**：应用、数据库、对象存储、工作流和模型出口均由企业环境控制。
 
-写错没关系，空着才有关系——空着的方向会被平均值填满。第一版粗是常态，跑完一轮系统分析再回来改，改上三五次才定得住。
+## 已实现的端到端能力
 
-然后跑一次工具检查（只看不装）：
+| 环节 | 当前能力 |
+|---|---|
+| 数据接入 | CSV 内存预检、编码识别、字段映射、重复/模板噪声识别、隔离原因 |
+| 数据治理 | 去重、隐私脱敏、业务字段保留、批次与内容哈希溯源 |
+| AI 分析 | DeepSeek、GLM、MiniMax、通义千问及自定义 OpenAI-compatible 模型入口 |
+| 稳定运行 | Temporal 异步批处理、并发控制、指数退避、逐条检查点、硬预算上限 |
+| 深度洞察 | 生命周期、问题、场景、潜在需求、风险、根因假设、改进方向、验证计划 |
+| 产品决策 | 多维切片、关键模式、Top 决策卡、证据边界、禁止结论和人工责任人 |
+| 行动闭环 | 机会审核、行动状态机、负责人/协作人、结果指标与人工复盘 |
+| 企业治理 | 权限与产品范围、append-only 审计、黄金样本、模型发布门禁与回滚 |
 
-```bash
-bash scripts/check-tools.sh            # 缺什么、怎么装
-bash scripts/check-tools.sh --mirrors  # 装不上时的国内镜像
+## 经验证的路演快照
+
+2026-08-15 使用 DeepSeek V4 Pro 对养生壶数据完成了一次受控批量分析：
+
+- 370/370 条记录完成，370 条逐条检查点，未解析 0 条；
+- 363 条去重原声、537 个多维信号、126 个候选聚类、126 个待审核机会；
+- 风险信号包含 critical 6、high 54、medium 127、low 350；
+- “底座冒烟并伴随烧塑料味”被提升为 critical，并进入 P0 人工复核；
+- 时间范围只有 4 天、来源只有天猫，系统明确禁止趋势、市场外推、因果和 ROI 结论。
+
+这组数字是本机数据库中的已验证运行快照，不包含 API Key，也不把客户原声数据库提交到 Git。全新克隆默认使用 0 次外部调用的本地规则基线；只有管理员显式批准模型、用途、HTTPS 端点和预算后才会外发脱敏载荷。
+
+## 系统架构
+
+```mermaid
+flowchart LR
+  CSV["CSV / 业务数据"] --> PREVIEW["预检、映射、去重与脱敏"]
+  PREVIEW --> PG["PostgreSQL / pgvector 真相源"]
+  PG --> TEMPORAL["Temporal 异步工作流"]
+  TEMPORAL --> GATEWAY["受控模型网关"]
+  GATEWAY --> MODELS["DeepSeek / GLM / MiniMax / 千问 / 自定义"]
+  TEMPORAL --> SIGNALS["信号、聚类与机会候选"]
+  SIGNALS --> REVIEW["人工审核与行动闭环"]
+  REVIEW --> API["FastAPI"]
+  API --> WEB["React 决策工作台"]
 ```
 
-**它只报告，不会自己装任何东西。** 输出里的安装命令看不懂就先跳过——
-缺的工具多半这会儿还用不上，等真用到了再回来装。**别卡在这一步。**
+技术栈：React + TypeScript + Vite、FastAPI + SQLAlchemy + Alembic、PostgreSQL/pgvector、Temporal、Valkey、Docker Compose、Nginx 同源代理。
 
-## 目录：六组
+## 一键本地演示
 
-**一、三、四、五是我的，第二组是别人的，第六组是垃圾。**
+前提：Docker Desktop。
 
-| 组 | 位置 | 装什么 |
-|---|---|---|
-| 1　开工手册与规约 | `CLAUDE.md` · `.42cog/` · `specs/` | 我立的规矩 |
-| 2　真相源与参考 | `vault/` · `notes/` · `resources/` | 别人的材料 |
-| 3　脚本与扩展 | `skills/` · `scripts/` · `plugin.json` | 我的手段 |
-| 4　作品 | `reports/` | 我产的东西 |
-| 5　状态与文档 | `state/` · `docs/` | 我的账 |
-| 6　过程材料 | `_build/` `_tmp/` `_archive/` | 扔的，不入库 |
+```bash
+cd platform
+bash scripts/demo-up.sh
+```
 
-企业私有化平台位于 `platform/`：它把现有报告管线升级为原声证据、聚类治理、机会审核、行动结果和模型评测闭环。启动、迁移、恢复、备份和完整验证入口只在 `platform/README.md` 维护。
+打开 `http://localhost:4173`，点击“进入本地开发环境”。API 文档位于 `http://localhost:8000/api/docs`，Temporal UI 位于 `http://localhost:8233`。
 
-第二组只有一条线要记：**能引用到什么程度**——`vault/` 可引用，`notes/` 与 `resources/` 只读。动了前者是冒犯，抄了后者是侵权。
+本地开发登录只允许 localhost，使用短期 HttpOnly、SameSite Cookie；生产环境必须关闭该入口并接入企业 OIDC。
 
-## 这四份说明这个系统是什么
+## 当前验证证据
 
-| 文件 | 装什么 |
-|---|---|
-| `.42cog/intent.md` | **意向书**：朝哪儿使劲 · 真难题 · 不做什么 |
-| `.42cog/real.md` | **现实约束**：日程 · 底线红线 · 手上有多少资源 · 给谁用 |
-| `.42cog/cog.md` | **认知模型**：有哪些东西，谁产生、谁是谁的输入 |
-| `.42cog/meta.md` | **项目身份**：系统名 · 作品区 · 上下游 · 依赖 |
+- 后端：80 项测试通过，Ruff 通过；
+- 前端：9 项测试通过，TypeScript 与 Vite 生产构建通过；
+- 真实 Compose：3 条浏览器测试通过，不拦截或模拟 API；
+- API、Web、Worker 健康，Alembic 为 `0007 (head)`；
+- 密钥仅从被 Git 忽略的 `.env` 读取，安全 provider API 不返回 key 或 base URL。
 
-## 干到哪了
+## 文档入口
 
-看 `state/board.md`——每一轮干完什么、下一步是什么，都记在那里。
-换一台机器、换一个新会话，从那份文件接着往下走。
+- [路演官方评审指南](docs/ROADSHOW.md)
+- [平台启动、配置、备份与部署](platform/README.md)
+- [受控 AI 原声洞察工作流](platform/docs/operations/ai-semantic-workflow.md)
+- [产品决策洞察工作流](platform/docs/operations/product-decision-insight-workflow.md)
+- [中国模型 API 接入依据](platform/backend/docs/china-model-api-sources.md)
+- [企业架构审查](docs/reviews/001-enterprise-architecture.md)
+- [当前状态板](state/board.md)
 
----
+## 生产边界
 
-**给 AI 的开工协议在 `CLAUDE.md`**，它每次开工先读那一份。
-这份 README 是给人看的门面：README 说这是什么，`CLAUDE.md` 说该怎么干。
-
-*由 `aias-meta-init` 生成于 2026-08-15。*
+当前版本已经具备可运行的企业纵向链路，但正式生产仍需企业提供 OIDC、生产对象存储、网络出口策略、Temporal mTLS/命名空间权限、数据保留策略和业务系统集成。仓库不应被理解为已经完成这些企业侧接入，也不应把 AI 候选洞察视为质量定性、召回或投资收益结论。

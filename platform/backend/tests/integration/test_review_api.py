@@ -65,6 +65,162 @@ async def test_reviewer_can_inspect_evidence_and_persist_audited_decision(
     assert action.owner_id == "quality-owner"
     assert action.external_system_ref == "QA-2026-001"
 
+    refreshed = await api_client.get(
+        f"/api/opportunities/{opportunity.id}",
+        headers=headers,
+    )
+    execution = refreshed.json()["actions"][0]
+    assert execution["owner"] == "quality-owner"
+    assert execution["objective"] == opportunity.title
+    assert execution["due_at"].startswith("2026-08-30")
+    assert execution["status"] == "planned"
+    assert execution["external_reference"] == "QA-2026-001"
+    assert execution["audit_timeline"][0]["action"] == "action.create"
+
+
+async def test_action_status_and_human_outcome_are_audited(
+    api_client,
+    reviewer_token,
+    db_session,
+    repo_root,
+):
+    await import_legacy_snapshot(db_session, load_legacy_snapshot(repo_root))
+    opportunity = await db_session.scalar(
+        select(Opportunity)
+        .where(Opportunity.priority_override == "safety")
+        .limit(1)
+    )
+    headers = {"Authorization": f"Bearer {reviewer_token}"}
+    review = await api_client.post(
+        f"/api/opportunities/{opportunity.id}/reviews",
+        headers=headers,
+        json={
+            "decision": "approve",
+            "reason": "证据达到门槛，进入质量验证",
+            "owner": "quality-owner",
+            "collaborating_departments": ["研发", "客服"],
+            "objective": "验证新壶体方案是否降低破裂反馈",
+            "due_date": "2026-09-15",
+            "external_reference": "QA-2026-002",
+        },
+    )
+    assert review.status_code == 200
+    action = review.json()["actions"][0]
+    action_id = action["id"]
+    assert action["collaborating_departments"] == ["研发", "客服"]
+
+    premature = await api_client.post(
+        f"/api/opportunities/{opportunity.id}/actions/{action_id}/transitions",
+        headers=headers,
+        json={"target_status": "completed", "reason": "直接结项"},
+    )
+    assert premature.status_code == 422
+    assert "至少记录一个结果指标" in premature.json()["detail"]
+
+    started = await api_client.post(
+        f"/api/opportunities/{opportunity.id}/actions/{action_id}/transitions",
+        headers=headers,
+        json={"target_status": "in_progress", "reason": "样机测试已启动"},
+    )
+    assert started.status_code == 200
+    assert started.json()["status"] == "in_progress"
+
+    illegal = await api_client.post(
+        f"/api/opportunities/{opportunity.id}/actions/{action_id}/transitions",
+        headers=headers,
+        json={"target_status": "planned", "reason": "回退"},
+    )
+    assert illegal.status_code == 422
+    assert "不允许" in illegal.json()["detail"]
+
+    missing_definition = await api_client.post(
+        f"/api/opportunities/{opportunity.id}/actions/{action_id}/outcomes",
+        headers=headers,
+        json={
+            "metric_name": "每千订单破裂反馈数",
+            "unit": "条/千订单",
+            "baseline_value": 4.2,
+            "target_value": 2.0,
+            "actual_value": 2.8,
+            "observation_window": "2026-09-01 至 2026-09-14",
+            "conclusion": "观察窗口内指标下降",
+            "limitations": "订单结构同期发生变化",
+        },
+    )
+    assert missing_definition.status_code == 422
+
+    outcome = await api_client.post(
+        f"/api/opportunities/{opportunity.id}/actions/{action_id}/outcomes",
+        headers=headers,
+        json={
+            "metric_name": "每千订单破裂反馈数",
+            "metric_definition": "窗口内破裂相关有效反馈数 / 支付订单数 * 1000",
+            "unit": "条/千订单",
+            "baseline_value": 4.2,
+            "target_value": 2.0,
+            "actual_value": 2.8,
+            "observation_window": "2026-09-01 至 2026-09-14",
+            "conclusion": "观察窗口内指标下降，继续扩大样本",
+            "limitations": "订单结构同期发生变化，不能证明由改版造成",
+        },
+    )
+    assert outcome.status_code == 200
+    assert outcome.json()["recorded_by"] == "reviewer-1"
+    assert "不能证明因果" in outcome.json()["causality_notice"]
+
+    completed = await api_client.post(
+        f"/api/opportunities/{opportunity.id}/actions/{action_id}/transitions",
+        headers=headers,
+        json={"target_status": "completed", "reason": "阶段性验证完成"},
+    )
+    assert completed.status_code == 200
+    assert completed.json()["status"] == "completed"
+    assert completed.json()["outcomes"][0]["metric_definition"].startswith(
+        "窗口内破裂"
+    )
+    assert completed.json()["audit_timeline"][-1]["action"] == "action.transition"
+
+
+async def test_action_write_requires_owner_and_product_scope(
+    api_client,
+    api_settings,
+    reviewer_token,
+    db_session,
+    repo_root,
+):
+    await import_legacy_snapshot(db_session, load_legacy_snapshot(repo_root))
+    opportunity = await db_session.scalar(select(Opportunity).limit(1))
+    headers = {"Authorization": f"Bearer {reviewer_token}"}
+
+    missing_owner = await api_client.post(
+        f"/api/opportunities/{opportunity.id}/reviews",
+        headers=headers,
+        json={
+            "decision": "approve",
+            "reason": "进入验证",
+            "objective": "验证产品改进",
+        },
+    )
+    assert missing_owner.status_code == 422
+    assert "必须指定负责人" in missing_owner.json()["detail"]
+
+    outsider = issue_dev_token(
+        api_settings,
+        subject="other-product-reviewer",
+        roles=("quality_reviewer",),
+        product_lines=("其他产品",),
+    )
+    forbidden = await api_client.post(
+        f"/api/opportunities/{opportunity.id}/actions",
+        headers={"Authorization": f"Bearer {outsider}"},
+        json={
+            "owner": "pm-1",
+            "objective": "不应创建",
+            "decision_rationale": "越权测试",
+        },
+    )
+    assert forbidden.status_code == 403
+
 
 async def test_model_reviewer_keeps_suggestion_separate_from_human_label(
     api_client,
