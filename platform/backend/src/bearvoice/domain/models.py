@@ -277,6 +277,7 @@ class Opportunity(IdTimestampMixin, Base):
     safety_level: Mapped[str | None] = mapped_column(String(32), index=True)
     differentiation: Mapped[str | None] = mapped_column(Text)
     recommended_action: Mapped[str | None] = mapped_column(Text)
+    priority_override: Mapped[str | None] = mapped_column(String(32), index=True)
     status: Mapped[str] = mapped_column(
         String(32), nullable=False, default=OpportunityStatus.DRAFT.value
     )
