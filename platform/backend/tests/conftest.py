@@ -1,12 +1,19 @@
 from pathlib import Path
 
 import pytest
+from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 from bearvoice.config import Settings
 from bearvoice.db import Base
+from bearvoice.db import get_db_session
 from bearvoice.domain import models  # noqa: F401
+from bearvoice.main import create_app
+from bearvoice.security.auth import issue_dev_token
+
+
+DEV_AUTH_KEY = "bearvoice-development-test-signing-key"
 
 
 @pytest.fixture
@@ -36,3 +43,46 @@ async def db_session():
         await transaction.rollback()
         await connection.close()
         await engine.dispose()
+
+
+@pytest.fixture
+def api_settings() -> Settings:
+    return Settings(
+        dev_auth_enabled=True,
+        dev_auth_signing_key=DEV_AUTH_KEY,
+    )
+
+
+@pytest.fixture
+async def api_client(db_session, api_settings):
+    app = create_app(api_settings)
+
+    async def override_session():
+        yield db_session
+
+    app.dependency_overrides[get_db_session] = override_session
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://test",
+    ) as client:
+        yield client
+
+
+@pytest.fixture
+def management_token(api_settings: Settings) -> str:
+    return issue_dev_token(
+        api_settings,
+        subject="management-1",
+        roles=("management",),
+        product_lines=(),
+    )
+
+
+@pytest.fixture
+def reviewer_token(api_settings: Settings) -> str:
+    return issue_dev_token(
+        api_settings,
+        subject="reviewer-1",
+        roles=("quality_reviewer",),
+        product_lines=("养生壶",),
+    )

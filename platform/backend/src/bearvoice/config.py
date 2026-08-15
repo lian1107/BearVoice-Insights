@@ -23,3 +23,4 @@ class Settings(BaseSettings):
     oidc_jwks_url: str | None = None
     dev_auth_enabled: bool = False
     dev_auth_signing_key: str | None = None
+    data_retention_days: int = 365
