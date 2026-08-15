@@ -377,10 +377,27 @@ class OutcomeMeasurement(IdTimestampMixin, Base):
 
 class GoldenExample(IdTimestampMixin, Base):
     __tablename__ = "golden_examples"
+    __table_args__ = (
+        UniqueConstraint(
+            "analysis_run_id",
+            "sampling_seed",
+            "voice_record_id",
+            name="uq_golden_sample_run_seed_voice",
+        ),
+    )
 
+    analysis_run_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("analysis_runs.id", ondelete="CASCADE"), nullable=False
+    )
     voice_record_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("voice_records.id", ondelete="RESTRICT"), nullable=False
     )
+    primary_signal: Mapped[str] = mapped_column(String(50), nullable=False)
+    cluster_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("clusters.id", ondelete="RESTRICT"), nullable=False
+    )
+    sampling_seed: Mapped[int] = mapped_column(Integer, nullable=False)
+    sample_order: Mapped[int] = mapped_column(Integer, nullable=False)
     redacted_input: Mapped[str] = mapped_column(Text, nullable=False)
     expected_signals: Mapped[list[dict[str, Any]]] = mapped_column(
         JSONB, nullable=False, default=list
@@ -395,12 +412,30 @@ class GoldenExample(IdTimestampMixin, Base):
         JSONB, nullable=False, default=list
     )
     review_status: Mapped[str] = mapped_column(
-        String(32), nullable=False, default="pending_label"
+        String(32), nullable=False, default="pending_human_review"
     )
     reviewer_ids: Mapped[list[str]] = mapped_column(
         JSONB, nullable=False, default=list
     )
     dispute_status: Mapped[str | None] = mapped_column(String(32))
+
+
+class GoldenReview(IdTimestampMixin, Base):
+    __tablename__ = "golden_reviews"
+    __table_args__ = (
+        UniqueConstraint(
+            "golden_example_id",
+            "reviewer_id",
+            name="uq_golden_example_reviewer",
+        ),
+    )
+
+    golden_example_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("golden_examples.id", ondelete="CASCADE"), nullable=False
+    )
+    reviewer_id: Mapped[str] = mapped_column(String(200), nullable=False)
+    review_role: Mapped[str] = mapped_column(String(32), nullable=False)
+    label_snapshot: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
 
 
 class EvaluationRun(IdTimestampMixin, Base):
@@ -425,6 +460,10 @@ class ModelRelease(IdTimestampMixin, Base):
         ForeignKey("evaluation_runs.id", ondelete="RESTRICT"), nullable=False
     )
     status: Mapped[str] = mapped_column(String(32), nullable=False)
+    reason_code: Mapped[str | None] = mapped_column(String(100))
+    gate_results: Mapped[dict[str, Any]] = mapped_column(
+        JSONB, nullable=False, default=dict
+    )
     approved_by: Mapped[str | None] = mapped_column(String(200))
     released_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     rollback_of_id: Mapped[uuid.UUID | None] = mapped_column(
