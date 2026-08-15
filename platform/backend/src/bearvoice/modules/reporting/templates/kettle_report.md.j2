@@ -1,0 +1,33 @@
+# {{ snapshot.product }}客户原声产品机会报告
+
+> 数据范围：{{ snapshot.coverage.channel }} · {{ snapshot.coverage.period_start }} 至 {{ snapshot.coverage.period_end }} · {{ snapshot.coverage.limitation }}。
+
+本品类 **{{ snapshot.total_voices }} 条**去重原声中，产品改进信号 **{{ snapshot.actionable_voices }} 条**；形成 **{{ snapshot.top_clusters | length }} 个反馈聚类**与 **{{ snapshot.opportunities | length }} 条产品机会**。
+
+## 信号构成
+
+| 信号 | 条数 | 占比 | 分母 |
+|---|---:|---:|---:|
+{% for item in snapshot.signals -%}
+| {{ item.signal_type }} | {{ item.count }} | {{ item.percentage }}% | {{ item.denominator }} |
+{% endfor %}
+
+## 反馈聚类
+
+| 排名 | 聚类 | 条数 | 占比 |
+|---:|---|---:|---:|
+{% for item in snapshot.top_clusters -%}
+| {{ loop.index }} | {{ item.name }} | {{ item.count }} | {{ item.percentage }}% |
+{% endfor %}
+
+## 产品机会
+
+| 优先级 | 状态 | 机会 | 影响面 | 独立证据 |
+|---|---|---|---|---:|
+{% for item in snapshot.opportunities -%}
+| {{ item.severity or "待定级" }} | {{ item.status }} | {{ item.title }} | {{ item.impact_scope or "待评估" }} | {{ item.evidence_count }} |
+{% endfor %}
+
+## 数据边界
+
+当前数据仅覆盖 {{ snapshot.coverage.days }} 天，{{ snapshot.coverage.limitation }}。报告数字来自平台统一查询投影，可由同一分析运行重新生成。

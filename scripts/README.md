@@ -23,3 +23,11 @@
 - 一个脚本干一件事，名字说清干什么
 - 能跑就能重复跑：**同样输入同样结果，跑几遍都一样**
 - 报告问题，不擅自修改——要改也另出一个 `fix-*` 脚本，让人决定跑不跑
+
+## 现有兼容入口
+
+- `scripts/analyze.py`：旧四阶段报告管线，可继续回放既有缓存与 Markdown 产物。
+- `python -m bearvoice.cli import-legacy`：在 `platform/backend` 内执行，把养生壶 10 个已验证缓存严格导入企业数据库；缺失即失败，模型调用恒为 0。
+- `python -m bearvoice.cli export-markdown <目标>`：从平台统一投影重新生成兼容报告。
+
+平台运行、迁移、工作流恢复和备份命令统一见 `platform/README.md`；这里不复制第二份运维手册。

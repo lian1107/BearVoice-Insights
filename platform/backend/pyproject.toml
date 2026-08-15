@@ -13,6 +13,7 @@ dependencies = [
   "sqlalchemy[asyncio]>=2.0.52",
   "temporalio>=1.31.0",
   "uvicorn[standard]",
+  "jinja2>=3.1.6",
 ]
 
 [dependency-groups]

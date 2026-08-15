@@ -27,7 +27,7 @@ services:
       retries: 20
 
   temporal:
-    image: temporalio/auto-setup:1.31.2
+    image: temporalio/auto-setup:1.29.7
     depends_on:
       db:
         condition: service_healthy
@@ -43,7 +43,7 @@ services:
       - "7233:7233"
 
   temporal-ui:
-    image: temporalio/ui:2.34.0
+    image: temporalio/ui:2.53.3
     depends_on:
       - temporal
     environment:
@@ -56,8 +56,8 @@ services:
     build:
       context: ./backend
     depends_on:
-      db:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       temporal:
         condition: service_started
       cache:
@@ -67,8 +67,41 @@ services:
       BEARVOICE_TEMPORAL_ADDRESS: ${BEARVOICE_TEMPORAL_ADDRESS}
       BEARVOICE_CACHE_URL: ${BEARVOICE_CACHE_URL}
       BEARVOICE_MODEL_EGRESS_ENABLED: ${BEARVOICE_MODEL_EGRESS_ENABLED}
+      BEARVOICE_STORAGE_BACKEND: ${BEARVOICE_STORAGE_BACKEND}
+      BEARVOICE_OBJECT_STORE_ROOT: ${BEARVOICE_OBJECT_STORE_ROOT}
+      BEARVOICE_S3_ENDPOINT_URL: ${BEARVOICE_S3_ENDPOINT_URL:-}
+      BEARVOICE_S3_ENDPOINT_ALLOWLIST: ${BEARVOICE_S3_ENDPOINT_ALLOWLIST:-[]}
+      BEARVOICE_S3_BUCKET: ${BEARVOICE_S3_BUCKET:-}
     ports:
       - "8000:8000"
+    volumes:
+      - ./.data/objects:/var/lib/bearvoice/objects
+
+  migrate:
+    build:
+      context: ./backend
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      BEARVOICE_DATABASE_URL: ${BEARVOICE_DATABASE_URL}
+
+  worker:
+    build:
+      context: ./backend
+    command: ["python", "-m", "bearvoice.worker"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      temporal:
+        condition: service_started
+    environment:
+      BEARVOICE_DATABASE_URL: ${BEARVOICE_DATABASE_URL}
+      BEARVOICE_TEMPORAL_ADDRESS: ${BEARVOICE_TEMPORAL_ADDRESS}
+      BEARVOICE_CACHE_URL: ${BEARVOICE_CACHE_URL}
+      BEARVOICE_MODEL_EGRESS_ENABLED: ${BEARVOICE_MODEL_EGRESS_ENABLED}
+    restart: on-failure
 
   web:
     build:

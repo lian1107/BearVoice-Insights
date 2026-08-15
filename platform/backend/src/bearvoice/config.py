@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -24,3 +26,8 @@ class Settings(BaseSettings):
     dev_auth_enabled: bool = False
     dev_auth_signing_key: str | None = None
     data_retention_days: int = 365
+    storage_backend: Literal["filesystem", "s3"] = "filesystem"
+    object_store_root: str = "../.data/objects"
+    s3_endpoint_url: str | None = None
+    s3_endpoint_allowlist: tuple[str, ...] = ()
+    s3_bucket: str = ""
