@@ -7,7 +7,6 @@ import { DashboardPage } from "../src/pages/DashboardPage";
 
 const fixture: DashboardSnapshot = {
   product: "养生壶",
-  view: "competition",
   analysis_run_id: "run-1",
   total_voices: 370,
   actionable_voices: 254,
@@ -50,15 +49,21 @@ const fixture: DashboardSnapshot = {
 };
 
 
-test("competition view leads with evidence-backed decision context", async () => {
+test("decision dashboard leads with evidence-backed decision context", async () => {
+  const loadedProducts: string[] = [];
   render(
     <DashboardPage
-      initialView="competition"
-      loadDashboard={async () => fixture}
+      loadDashboard={async (product) => {
+        loadedProducts.push(product);
+        return fixture;
+      }}
     />,
   );
 
   expect(await screen.findByText("370")).toBeTruthy();
+  expect(loadedProducts).toEqual(["养生壶"]);
+  expect(screen.queryByText("赛事视图")).toBeNull();
+  expect(screen.queryByText("企业视图")).toBeNull();
   expect(screen.getByText("254 条含改进信号")).toBeTruthy();
   expect(
     screen.getByText("仅天猫咨询 · 2026-08-01 至 08-03 · 不支持趋势判断"),
@@ -73,7 +78,6 @@ test("cluster and opportunity controls open their governance workspaces", async 
   const openedOpportunities: Array<string | undefined> = [];
   render(
     <DashboardPage
-      initialView="competition"
       loadDashboard={async () => fixture}
       onOpenOpportunities={(id) => openedOpportunities.push(id)}
       onOpenTaxonomy={(id) => openedClusters.push(id)}

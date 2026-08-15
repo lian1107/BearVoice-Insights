@@ -1,7 +1,5 @@
 import uuid
 from datetime import date, datetime
-from typing import Literal
-
 from pydantic import BaseModel
 from sqlalchemy import distinct, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -59,7 +57,6 @@ class CoverageBoundary(BaseModel):
 
 class DashboardSnapshot(BaseModel):
     product: str
-    view: Literal["competition", "enterprise"]
     analysis_run_id: uuid.UUID
     total_voices: int
     actionable_voices: int
@@ -114,7 +111,6 @@ async def get_dashboard_snapshot(
     session: AsyncSession,
     *,
     product: str,
-    view: Literal["competition", "enterprise"],
 ) -> DashboardSnapshot:
     run_id = await _latest_analysis_run_id(session, product)
     total_voices = int(
@@ -274,7 +270,6 @@ async def get_dashboard_snapshot(
     )
     return DashboardSnapshot(
         product=product,
-        view=view,
         analysis_run_id=run_id,
         total_voices=total_voices,
         actionable_voices=actionable_voices,

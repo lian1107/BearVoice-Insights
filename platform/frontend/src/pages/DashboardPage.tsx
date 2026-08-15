@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { getDashboard } from "../api/client";
-import type { DashboardSnapshot, DashboardView } from "../api/types";
+import type { DashboardSnapshot } from "../api/types";
 import { ClusterRanking } from "../components/ClusterRanking";
 import { DataBoundaryNotice } from "../components/DataBoundaryNotice";
 import { KpiStrip } from "../components/KpiStrip";
@@ -10,30 +10,24 @@ import { SignalComposition } from "../components/SignalComposition";
 
 
 interface DashboardPageProps {
-  initialView?: DashboardView;
-  loadDashboard?: (
-    product: string,
-    view: DashboardView,
-  ) => Promise<DashboardSnapshot>;
+  loadDashboard?: (product: string) => Promise<DashboardSnapshot>;
   onOpenOpportunities?: (opportunityId?: string) => void;
   onOpenTaxonomy?: (clusterId: string) => void;
 }
 
 
 export function DashboardPage({
-  initialView = "enterprise",
   loadDashboard = getDashboard,
   onOpenOpportunities,
   onOpenTaxonomy,
 }: DashboardPageProps) {
-  const [view, setView] = useState<DashboardView>(initialView);
   const [dashboard, setDashboard] = useState<DashboardSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
     setError(null);
-    loadDashboard("养生壶", view)
+    loadDashboard("养生壶")
       .then((result) => active && setDashboard(result))
       .catch((reason: unknown) => {
         if (active) {
@@ -43,7 +37,7 @@ export function DashboardPage({
     return () => {
       active = false;
     };
-  }, [loadDashboard, view]);
+  }, [loadDashboard]);
 
   if (error) {
     return <div className="state-panel" role="alert">{error}</div>;
@@ -60,22 +54,6 @@ export function DashboardPage({
           <p className="eyebrow">养生壶 · 客户原声</p>
           <h1>产品决策驾驶舱</h1>
           <p>从真实需求到可审核机会，所有数字可下钻回证据。</p>
-        </div>
-        <div className="view-switch" aria-label="驾驶舱视图">
-          <button
-            aria-pressed={view === "competition"}
-            onClick={() => setView("competition")}
-            type="button"
-          >
-            赛事视图
-          </button>
-          <button
-            aria-pressed={view === "enterprise"}
-            onClick={() => setView("enterprise")}
-            type="button"
-          >
-            企业视图
-          </button>
         </div>
       </header>
 

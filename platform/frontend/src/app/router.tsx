@@ -50,7 +50,6 @@ export function EnterpriseRouter({ permissions }: { permissions: UiPermission[] 
   const content = active === "dashboard"
     ? (
         <DashboardPage
-          initialView="competition"
           onOpenOpportunities={(id) => {
             setSelectedOpportunityId(id);
             setActive("opportunities");

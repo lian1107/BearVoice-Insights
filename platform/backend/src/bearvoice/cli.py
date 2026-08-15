@@ -36,7 +36,6 @@ async def export_report(destination: Path) -> Path:
         snapshot = await get_dashboard_snapshot(
             session,
             product="养生壶",
-            view="competition",
         )
     return export_markdown(snapshot, destination)
 

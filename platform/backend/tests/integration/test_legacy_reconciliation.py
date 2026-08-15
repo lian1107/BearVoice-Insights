@@ -21,7 +21,6 @@ async def test_api_projection_matches_verified_cluster_detail(
     dashboard = await get_dashboard_snapshot(
         db_session,
         product="养生壶",
-        view="competition",
     )
     detail = json.loads(
         (repo_root / "reports/improve-养生壶/聚类明细.json").read_text(

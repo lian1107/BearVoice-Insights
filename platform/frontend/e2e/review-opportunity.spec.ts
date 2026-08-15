@@ -5,7 +5,6 @@ import { mockAuthenticatedAdmin } from "./mock-auth";
 
 const dashboard = {
   product: "养生壶",
-  view: "competition",
   analysis_run_id: "run-1",
   total_voices: 370,
   actionable_voices: 254,

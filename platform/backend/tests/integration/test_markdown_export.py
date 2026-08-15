@@ -15,7 +15,6 @@ async def test_markdown_export_reconciles_with_dashboard_snapshot(
     snapshot = await get_dashboard_snapshot(
         db_session,
         product="养生壶",
-        view="competition",
     )
 
     path = export_markdown(snapshot, tmp_path / "报告.md")

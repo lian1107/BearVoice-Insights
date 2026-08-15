@@ -906,7 +906,7 @@ git commit -m "feat: 增加企业权限与模型外发控制" -m "Change-By:    
 ```python
 async def test_kettle_dashboard_reconciles_with_verified_legacy_report(api_client, management_token):
     response = await api_client.get(
-        "/api/dashboard?product=养生壶&view=competition",
+        "/api/dashboard?product=养生壶",
         headers={"Authorization": f"Bearer {management_token}"},
     )
     payload = response.json()
@@ -924,7 +924,7 @@ Expected: FAIL with 404 or missing route.
 
 - [x] **Step 3: 实现统一查询投影和路由**
 
-`DashboardSnapshot` 同时返回绝对数、占比、分母、时间范围、来源和数据限制。赛事视图与企业视图共用查询，只改变显示字段和权限，不维护第二套数字。
+`DashboardSnapshot` 同时返回绝对数、占比、分母、时间范围、来源和数据限制。驾驶舱只维护一个产品决策口径；赛事表达与日常运营复用同一页面，不设置无数据差异的伪视图。
 
 ```python
 class DashboardSnapshot(BaseModel):
@@ -937,9 +937,9 @@ class DashboardSnapshot(BaseModel):
 
 
 @router.get("/dashboard", response_model=DashboardSnapshot)
-async def dashboard(product: str, view: DashboardView, principal=Depends(current_principal)):
+async def dashboard(product: str, principal=Depends(current_principal)):
     require_product_scope(product, principal)
-    return await get_dashboard_snapshot(product=product, view=view, principal=principal)
+    return await get_dashboard_snapshot(product=product, principal=principal)
 ```
 
 - [x] **Step 4: 运行驾驶舱 API 测试并确认通过**
@@ -1015,13 +1015,13 @@ git commit -m "feat: 提供机会决策与证据 API" -m "Change-By:      ai\nAg
 
 **Interfaces:**
 - Consumes: Task 8 `DashboardSnapshot` JSON。
-- Produces: 可切换赛事/企业视图的 `DashboardPage`，以及可点击的聚类和机会入口。
+- Produces: 单一口径的 `DashboardPage`，以及可点击的聚类和机会入口。
 
 - [x] **Step 1: 写首屏决策信息失败测试**
 
 ```tsx
-test("competition view leads with evidence-backed decision context", async () => {
-  render(<DashboardPage initialView="competition" />);
+test("decision dashboard leads with evidence-backed decision context", async () => {
+  render(<DashboardPage />);
   expect(await screen.findByText("370")).toBeVisible();
   expect(screen.getByText("254 条含改进信号")).toBeVisible();
   expect(screen.getByText("仅天猫咨询 · 2026-08-01 至 08-03 · 不支持趋势判断")).toBeVisible();

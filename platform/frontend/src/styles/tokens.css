@@ -53,9 +53,6 @@ button { cursor: pointer; }
 .page-heading h1 { color: var(--ink); font-size: clamp(26px, 3vw, 38px); letter-spacing: -.04em; margin: 4px 0 8px; }
 .page-heading p { color: var(--muted); margin: 0; line-height: 1.6; }
 .eyebrow { color: var(--blue) !important; font-size: 12px; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
-.view-switch { background: #e9edf4; padding: 4px; border-radius: 10px; display: flex; flex-shrink: 0; }
-.view-switch button { border: 0; color: var(--muted); background: transparent; border-radius: 7px; padding: 8px 13px; }
-.view-switch button[aria-pressed="true"] { color: var(--ink); background: white; box-shadow: 0 2px 8px rgba(21,32,51,.08); font-weight: 700; }
 .boundary-notice { background: #f0f4fc; border: 1px solid #d4def1; border-left: 4px solid var(--blue); border-radius: 10px; padding: 13px 16px; display: flex; gap: 12px; align-items: flex-start; margin-bottom: 18px; color: #31405d; }
 .boundary-notice__mark { font-size: 11px; font-weight: 800; color: var(--blue-dark); background: white; border: 1px solid #d4def1; border-radius: 6px; padding: 3px 6px; }
 .boundary-notice strong { font-size: 13px; }
@@ -191,7 +188,6 @@ th { color: var(--muted); font-size: 11px; }
   .topbar span { font-size: 10px; }
   .content { padding: 20px 16px 40px; }
   .page-heading { display: block; }
-  .view-switch { margin-top: 16px; width: fit-content; }
   .kpi-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .opportunity-list { grid-template-columns: 1fr; }
   .ranking-list li { grid-template-columns: 24px minmax(90px, 1fr) minmax(70px, 1fr) 30px; }
@@ -218,7 +214,7 @@ th { color: var(--muted); font-size: 11px; }
 @media print {
   :root, body { background: white; color: #111827; }
   .app-shell { display: block; }
-  .sidebar, .topbar, .view-switch, .text-button, button { display: none !important; }
+  .sidebar, .topbar, .text-button, button { display: none !important; }
   .content { max-width: none; padding: 0; }
   .panel, .kpi-card { box-shadow: none; break-inside: avoid; }
   .dashboard-grid { grid-template-columns: .72fr 1.28fr; }

@@ -26,7 +26,6 @@ async def test_kettle_vertical_slice_without_model_calls(db_session, repo_root):
     dashboard = await get_dashboard_snapshot(
         db_session,
         product="养生壶",
-        view="competition",
     )
     assert (dashboard.total_voices, dashboard.actionable_voices) == (370, 254)
 

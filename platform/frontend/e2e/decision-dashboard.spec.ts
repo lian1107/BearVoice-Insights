@@ -5,7 +5,6 @@ import { mockAuthenticatedAdmin } from "./mock-auth";
 
 const dashboard = {
   product: "养生壶",
-  view: "competition",
   analysis_run_id: "11111111-1111-1111-1111-111111111111",
   total_voices: 370,
   actionable_voices: 254,
@@ -67,10 +66,12 @@ test.beforeEach(async ({ page }) => {
 });
 
 
-test("competition dashboard keeps evidence and data boundaries visible", async ({ page }, testInfo) => {
+test("decision dashboard keeps evidence and data boundaries visible", async ({ page }, testInfo) => {
   await page.goto("/");
 
   await expect(page.getByRole("heading", { name: "产品决策驾驶舱" })).toBeVisible();
+  await expect(page.getByText("赛事视图")).toHaveCount(0);
+  await expect(page.getByText("企业视图")).toHaveCount(0);
   await expect(page.getByText("254 条含改进信号")).toBeVisible();
   await expect(page.getByText(/仅天猫咨询.*不支持趋势判断/)).toBeVisible();
   await expect(page.getByRole("heading", { name: "Top 10 反馈聚类" })).toBeVisible();
@@ -80,7 +81,7 @@ test("competition dashboard keeps evidence and data boundaries visible", async (
     () => document.documentElement.scrollWidth - window.innerWidth,
   );
   expect(horizontalOverflow).toBeLessThanOrEqual(0);
-  await testInfo.attach(`competition-dashboard-${testInfo.project.name}`, {
+  await testInfo.attach(`decision-dashboard-${testInfo.project.name}`, {
     body: await page.screenshot({ fullPage: true }),
     contentType: "image/png",
   });

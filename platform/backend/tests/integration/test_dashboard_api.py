@@ -13,12 +13,13 @@ async def test_kettle_dashboard_reconciles_with_verified_legacy_report(
     await import_legacy_snapshot(db_session, load_legacy_snapshot(repo_root))
 
     response = await api_client.get(
-        "/api/dashboard?product=养生壶&view=competition",
+        "/api/dashboard?product=养生壶",
         headers={"Authorization": f"Bearer {management_token}"},
     )
 
     assert response.status_code == 200
     payload = response.json()
+    assert "view" not in payload
     assert payload["total_voices"] == 370
     assert payload["actionable_voices"] == 254
     assert payload["denominator"] == 370

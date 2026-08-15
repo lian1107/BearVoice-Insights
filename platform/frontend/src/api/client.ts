@@ -4,7 +4,6 @@ import type {
   GoldenReviewCommand,
   GoldenReviewItem,
   DashboardSnapshot,
-  DashboardView,
   EvidenceDetail,
   OpportunityDetail,
   OpportunityReviewCommand,
@@ -85,9 +84,8 @@ export function startLocalDevSession(): Promise<{ mode: string; expires_at: stri
 
 export function getDashboard(
   product: string,
-  view: DashboardView,
 ): Promise<DashboardSnapshot> {
-  const query = new URLSearchParams({ product, view });
+  const query = new URLSearchParams({ product });
   return getJson<DashboardSnapshot>(`/api/dashboard?${query}`);
 }
 

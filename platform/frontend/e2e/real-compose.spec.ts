@@ -18,6 +18,8 @@ test("local login loads canonical kettle data through the real compose stack", a
   await page.getByRole("button", { name: "进入本地开发环境" }).click();
 
   await expect(page.getByRole("heading", { name: "产品决策驾驶舱" })).toBeVisible();
+  await expect(page.getByText("赛事视图")).toHaveCount(0);
+  await expect(page.getByText("企业视图")).toHaveCount(0);
   await expect(page.getByText("370", { exact: true })).toBeVisible();
   await expect(page.getByText("254 条含改进信号")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Top 10 反馈聚类" })).toBeVisible();
@@ -27,4 +29,5 @@ test("local login loads canonical kettle data through the real compose stack", a
   expect(dashboardResponse?.status).toBe(200);
   expect(dashboardResponse?.contentType).toContain("application/json");
   expect(dashboardResponse?.url.startsWith("http://127.0.0.1:4173/api/")).toBe(true);
+  expect(new URL(dashboardResponse!.url).searchParams.has("view")).toBe(false);
 });

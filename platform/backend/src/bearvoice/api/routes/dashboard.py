@@ -1,5 +1,3 @@
-from typing import Literal
-
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -22,7 +20,6 @@ router = APIRouter(tags=["dashboard"])
 @router.get("/dashboard", response_model=DashboardSnapshot)
 async def dashboard(
     product: str,
-    view: Literal["competition", "enterprise"] = "enterprise",
     principal: Principal = Depends(require_permission(Permission.READ_VOICE)),
     session: AsyncSession = Depends(get_db_session),
 ) -> DashboardSnapshot:
@@ -30,5 +27,4 @@ async def dashboard(
     return await get_dashboard_snapshot(
         session,
         product=product,
-        view=view,
     )

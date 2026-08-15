@@ -1,5 +1,3 @@
-export type DashboardView = "competition" | "enterprise";
-
 export interface AuthOptions {
   local_dev_session: boolean;
   oidc_configured: boolean;
@@ -51,7 +49,6 @@ export interface CoverageBoundary {
 
 export interface DashboardSnapshot {
   product: string;
-  view: DashboardView;
   analysis_run_id: string;
   total_voices: number;
   actionable_voices: number;
