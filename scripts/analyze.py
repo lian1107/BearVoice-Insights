@@ -127,11 +127,17 @@ def sanitize_report_quote(text):
 
 
 # ── LLM ─────────────────────────────────────────────────────────────────
+def cache_path(prompt_text, tag, build_dir=None):
+    """Return the stable legacy cache path without reading or writing it."""
+    target_dir = build_dir or BUILD
+    key = hashlib.sha256(prompt_text.encode("utf-8")).hexdigest()[:16]
+    return os.path.join(target_dir, "%s-%s.json" % (tag, key))
+
+
 def call_claude(prompt_text, tag):
     """提示词落成文件再喂给命令，不拼进命令行（CLAUDE.md 第五节）。结果按内容哈希缓存。"""
     os.makedirs(BUILD, exist_ok=True)
-    key = hashlib.sha256(prompt_text.encode("utf-8")).hexdigest()[:16]
-    cache = os.path.join(BUILD, "%s-%s.json" % (tag, key))
+    cache = cache_path(prompt_text, tag)
     if os.path.exists(cache):
         with open(cache, encoding="utf-8") as f:
             return json.load(f)
